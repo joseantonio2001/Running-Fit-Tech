@@ -1,0 +1,15 @@
+# Dependencias principales especificadas en el documento técnico
+prompt-toolkit>=3.0.47
+reportlab>=4.2.2
+stravalib>=1.4.0
+requests>=2.32.3
+
+# Dependencias adicionales para tipado y calidad de código
+typing-extensions>=4.12.2
+dataclasses-json>=0.6.7
+
+# Desarrollo y testing
+pytest>=8.3.2
+pytest-cov>=5.0.0
+black>=24.4.2
+mypy>=1.11.1

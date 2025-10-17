@@ -1,0 +1,61 @@
+{
+    "athlete_summary": {
+        "name": "",
+        "generated_at": "2025-10-17T23:25:05.560290"
+    },
+    "personal_info": {
+        "age": null,
+        "gender": "",
+        "height_cm": null,
+        "weight_kg": null
+    },
+    "physiological_metrics": {
+        "meta_description": "Métricas fisiológicas clave que definen el perfil de resistencia y el potencial del atleta.",
+        "max_hr": null,
+        "resting_hr": null,
+        "hrv_ms": null,
+        "vo2_max": null,
+        "lactate_threshold_bpm": null
+    },
+    "injury_history": {
+        "meta_description": "Historial de lesiones para identificar patrones de riesgo, debilidades estructurales y adaptar el entrenamiento de fuerza y las progresiones de carga.",
+        "injuries": []
+    },
+    "training_context": {
+        "avg_weekly_km": null,
+        "training_days_per_week": "",
+        "strength_training_history": false,
+        "include_strength_training": false,
+        "quality_session_preference": ""
+    },
+    "performance_data": {
+        "personal_bests": {
+            "5k": null,
+            "10k": null,
+            "half_marathon": null,
+            "marathon": null
+        },
+        "training_zones": {
+            "zone1_hr": null,
+            "zone2_hr": null,
+            "zone3_hr": null,
+            "zone4_hr": null,
+            "zone5_hr": null
+        }
+    },
+    "race_goals": {
+        "main_objective": null,
+        "intermediate_races": []
+    },
+    "_INSTRUCTIONS": {
+        "description": "Plantilla para crear perfil de atleta manualmente",
+        "usage": "1. Rellena los campos necesarios, 2. Guarda el archivo, 3. Carga en la aplicación",
+        "notes": "Los campos null/None son opcionales. Elimina este campo '_INSTRUCTIONS' antes de cargar."
+    },
+    "_FIELD_EXAMPLES": {
+        "gender": "Opciones: 'Masculino', 'Femenino', 'Otro'",
+        "training_days_per_week": "Ejemplos: '4', '5', '4-5'",
+        "personal_bests": "Formato: 'HH:MM:SS' (ej: '00:18:30')",
+        "date_formats": "Fechas en formato YYYY-MM-DD (ej: '2024-11-30')"
+    }
+}
