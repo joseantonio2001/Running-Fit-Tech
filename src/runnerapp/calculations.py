@@ -385,63 +385,76 @@ def validate_race_date(date_str: str, race_name: str = "") -> Tuple[bool, str]:
         return False, "Formato de fecha inválido. Use YYYY-MM-DD"
 
 
-def calculate_bmi(weight_kg: float, height_cm: int) -> float:
+def calculate_bmi(weight_kg: float, height_cm: float) -> Optional[float]:
     """
-    Calcula el Índice de Masa Corporal.
+    Calculate Body Mass Index.
     
     Args:
-        weight_kg: Peso en kilogramos
-        height_cm: Altura en centímetros
+        weight_kg: Weight in kilograms
+        height_cm: Height in centimeters
     
     Returns:
-        float: BMI calculado
+        Optional[float]: BMI value or None if invalid inputs
     """
-    height_m = height_cm / 100.0
-    return weight_kg / (height_m ** 2)
-
-
-def estimate_vo2_max_from_time(distance_km: float, time_str: str, 
-                              age: int, weight_kg: float) -> Optional[float]:
-    """
-    Estima VO2máx a partir de tiempo de carrera usando fórmulas establecidas.
-    
-    Utiliza la fórmula de Jack Daniels para estimar VO2máx basado en
-    rendimiento en carrera, ajustado por edad y peso.
-    
-    Args:
-        distance_km: Distancia de la carrera en km
-        time_str: Tiempo en formato HH:MM:SS
-        age: Edad del atleta
-        weight_kg: Peso en kg
-    
-    Returns:
-        Optional[float]: VO2máx estimado en ml/kg/min o None si no se puede calcular
-    """
-    # Parsear tiempo a segundos
-    time_parts = time_str.split(':')
-    if len(time_parts) != 3:
+    if not weight_kg or not height_cm or weight_kg <= 0 or height_cm <= 0:
         return None
     
+    height_m = height_cm / 100
+    bmi = weight_kg / (height_m ** 2)
+    return round(bmi, 1)
+
+
+def estimate_vo2_max_from_time(distance_km: float, time_str: str, age: int, weight_kg: float) -> Optional[float]:
+    """
+    Estimate VO2 max from race performance using established formulas.
+    
+    Args:
+        distance_km: Race distance in kilometers
+        time_str: Race time in HH:MM:SS or MM:SS format
+        age: Athlete age
+        weight_kg: Athlete weight
+    
+    Returns:
+        Optional[float]: Estimated VO2 max in ml/kg/min or None if calculation impossible
+    """
     try:
-        hours, minutes, seconds = map(int, time_parts)
-        total_seconds = hours * 3600 + minutes * 60 + seconds
-    except ValueError:
+        # Parse time to seconds
+        parts = time_str.split(':')
+        if len(parts) == 3:
+            hours, minutes, seconds = map(int, parts)
+            total_seconds = hours * 3600 + minutes * 60 + seconds
+        elif len(parts) == 2:
+            minutes, seconds = map(int, parts)
+            total_seconds = minutes * 60 + seconds
+        else:
+            return None
+        
+        # Calculate velocity in m/s
+        distance_m = distance_km * 1000
+        velocity_ms = distance_m / total_seconds
+        
+        # Use Jack Daniels' formula for VO2max estimation
+        # VO2max = velocity * (0.2 + 0.9 * velocity / pace) + 3.5
+        # Simplified approximation for different distances
+        if distance_km == 10.0:
+            # 10K formula approximation
+            pace_min_per_km = total_seconds / 60 / distance_km
+            vo2_estimate = 483 / pace_min_per_km
+        elif distance_km == 21.097:
+            # Half marathon formula approximation
+            pace_min_per_km = total_seconds / 60 / distance_km
+            vo2_estimate = 460 / pace_min_per_km
+        else:
+            return None
+        
+        # Apply age correction (approximate)
+        age_factor = 1.0 - (max(0, age - 25) * 0.01)
+        vo2_estimate *= age_factor
+        
+        return round(max(25.0, min(85.0, vo2_estimate)), 1)
+        
+    except:
         return None
-    
-    # Calcular velocidad en m/min
-    distance_m = distance_km * 1000
-    velocity_mmin = distance_m / (total_seconds / 60)
-    
-    # Fórmula simplificada de Jack Daniels
-    # VO2 = -4.6 + 0.182258 * (m/min) + 0.000104 * (m/min)^2
-    vo2_raw = -4.6 + 0.182258 * velocity_mmin + 0.000104 * (velocity_mmin ** 2)
-    
-    # Ajustes por edad (declive aproximado de 0.5% por año después de los 25)
-    age_factor = 1.0 if age <= 25 else (1.0 - 0.005 * (age - 25))
-    vo2_adjusted = vo2_raw * age_factor
-    
-    return round(max(vo2_adjusted, 30), 1)  # Mínimo realista de 30
-
 
 def format_distance_for_display(distance_km: float) -> str:
     """
@@ -475,38 +488,36 @@ def format_distance_for_display(distance_km: float) -> str:
         return f"{distance_km:.1f}K"
 
 
-def suggest_training_weeks(race_date_str: str, current_fitness_level: str = "intermediate") -> int:
+def suggest_training_weeks(race_date: str) -> Optional[int]:
     """
-    Sugiere duración de plan de entrenamiento basado en fecha de carrera.
+    Suggest optimal training plan duration based on race date.
     
     Args:
-        race_date_str: Fecha de carrera en formato YYYY-MM-DD
-        current_fitness_level: Nivel actual ("beginner", "intermediate", "advanced")
+        race_date: Race date in YYYY-MM-DD format
     
     Returns:
-        int: Número de semanas sugeridas para el plan
+        Optional[int]: Suggested number of weeks or None if invalid date
     """
     try:
-        race_date = datetime.strptime(race_date_str, "%Y-%m-%d").date()
-        today = date.today()
-        weeks_available = (race_date - today).days // 7
+        from datetime import datetime
+        race_dt = datetime.strptime(race_date, "%Y-%m-%d")
+        now = datetime.now()
         
-        # Rangos recomendados por nivel
-        recommendations = {
-            "beginner": (12, 20),     # Principiantes necesitan más tiempo
-            "intermediate": (8, 16),  # Intermedios son más flexibles
-            "advanced": (6, 12)       # Avanzados pueden adaptarse rápido
-        }
+        if race_dt <= now:
+            return None
         
-        min_weeks, max_weeks = recommendations.get(current_fitness_level, (8, 16))
+        days_until = (race_dt - now).days
+        weeks_until = days_until // 7
         
-        # Ajustar a tiempo disponible
-        if weeks_available < min_weeks:
-            return max(4, weeks_available)  # Mínimo 4 semanas
-        elif weeks_available > max_weeks:
-            return max_weeks
+        # Suggest appropriate duration
+        if weeks_until < 6:
+            return weeks_until
+        elif weeks_until < 12:
+            return 8
+        elif weeks_until < 20:
+            return 12
         else:
-            return weeks_available
+            return 16
             
-    except ValueError:
-        return 12  # Default seguro
+    except:
+        return None
