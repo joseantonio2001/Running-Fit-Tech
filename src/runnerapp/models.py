@@ -103,6 +103,8 @@ class AthleteProfile:
     
     # === HISTORIAL DE LESIONES ===
     # Meta-descripción para guiar a la IA  
+    # Campo para tracking de secciones completadas
+    injury_section_visited: bool = False
     injury_history_meta: str = field(
         default="Historial de lesiones para identificar patrones de riesgo, debilidades estructurales y adaptar el entrenamiento de fuerza y las progresiones de carga."
     )

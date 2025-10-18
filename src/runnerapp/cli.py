@@ -1,17 +1,1001 @@
 """
-Módulo CLI - Interfaz de Línea de Comandos
+Interfaz de Línea de Comandos (CLI) - Implementación Completa
 
-PLACEHOLDER para Fase 2: Implementará la experiencia interactiva conversacional
-usando prompt-toolkit para crear un cuestionario guiado que permita al usuario
-completar su Ficha Técnica de manera intuitiva y robusta.
+Este módulo implementa la experiencia interactiva completa para la entrada
+manual de datos. Utiliza prompt-toolkit para crear un cuestionario guiado,
+modular y a prueba de errores que permite al usuario completar su Ficha
+Técnica de manera intuitiva.
 
-Funcionalidades futuras:
-- Flujo de interacción modular por secciones
+Características principales:
+- Flujo conversacional modular por secciones
 - Validación en tiempo real de entradas
 - Normalización automática de datos
 - Manejo elegante de campos opcionales
-- Integración con datos pre-rellenados de Strava
+- Control completo de guardado de cambios
+- Colores y formato profesional
+- CTRL+C durante entrada de datos: descarta cambios de sección y vuelve al menú
+- Sistema de detección de cambios en tiempo real (sin flags desincronizados)
 """
 
-# TODO: Implementar en Fase 2
-pass
+import sys
+from typing import Optional, Dict, List
+from prompt_toolkit import prompt
+from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.validation import Validator, ValidationError
+from prompt_toolkit.document import Document
+from prompt_toolkit.shortcuts import checkboxlist_dialog, radiolist_dialog
+
+from .models import AthleteProfile, Injury, Race, create_empty_profile
+from .persistence import save_profile, load_profile, has_existing_profile
+from .calculations import (
+    normalize_gender_input, parse_time_input, parse_training_days_input,
+    parse_quality_session_preference, calculate_training_zones,
+    validate_heart_rates, validate_physical_metrics, validate_race_date,
+    format_distance_for_display, suggest_training_weeks
+)
+from .validators import (
+    age_validator, weight_validator, height_validator, max_hr_validator,
+    resting_hr_validator, vo2_max_validator, weekly_km_validator,
+    training_days_validator, time_validator, date_validator, 
+    distance_validator, terrain_validator, name_validator, yes_no_validator
+)
+from .cli_helpers import (
+    APP_STYLE, print_title, print_subtitle, print_section_header,
+    print_success, print_warning, print_error, print_info,
+    format_current_value, format_prompt_with_hint, create_menu_options,
+    display_profile_summary, display_validation_errors, confirm_action,
+    display_welcome_message, clear_screen
+)
+
+
+def start_interactive_cli(existing_profile: Optional[AthleteProfile] = None) -> AthleteProfile:
+    """
+    Inicia la CLI interactiva completa.
+    
+    Punto de entrada principal para la experiencia de usuario de la Fase 2.
+    Maneja el flujo completo desde carga/creación de perfil hasta finalización
+    con control completo sobre el guardado de cambios.
+    
+    Args:
+        existing_profile: Perfil ya cargado (opcional). Si se proporciona,
+                         se usa en lugar de cargar desde archivo por defecto.
+    
+    Returns:
+        AthleteProfile: Perfil completado por el usuario
+    """
+    clear_screen()
+    display_welcome_message()
+    
+    # Usar perfil existente o cargar/crear nuevo
+    if existing_profile:
+        profile = existing_profile
+        print_success(f"Usando perfil cargado: {profile.name}")
+    else:
+        profile = load_existing_or_create_profile()
+    
+    # Mantener perfil original para comparación (baseline)
+    original_profile_baseline = AthleteProfile.from_dict(profile.to_dict())
+    
+    # Mostrar estado actual
+    if profile.name:
+        print_info(f"Trabajando con perfil de: {profile.name}")
+        display_profile_summary(profile)
+    
+    # Bucle principal de interacción
+    while True:
+        try:
+            # ✅ CORRECCIÓN: Calcular has_changes en tiempo real
+            has_changes = profiles_are_different(original_profile_baseline, profile)
+            
+            choice = show_main_menu(profile, has_changes)
+            
+            if choice in ['1', '2', '3', '4', '5', '6']:
+                # Ejecutar función correspondiente
+                section_functions = {
+                    '1': prompt_personal_info,
+                    '2': prompt_physiological_metrics,
+                    '3': prompt_training_context,
+                    '4': prompt_performance_data,
+                    '5': prompt_race_goals,
+                    '6': manage_injury_history
+                }
+                
+                section_names = {
+                    '1': "Información Personal",
+                    '2': "Métricas Fisiológicas", 
+                    '3': "Contexto de Entrenamiento",
+                    '4': "Datos de Rendimiento",
+                    '5': "Objetivos de Carrera",
+                    '6': "Historial de Lesiones"
+                }
+                
+                # Ejecutar función de la sección
+                updated_profile = section_functions[choice](profile)
+                
+                # Asignar resultado (puede ser perfil original si hubo CTRL+C)
+                profile = updated_profile
+                
+                # Verificar si realmente hay cambios ahora (comparando con baseline)
+                if profiles_are_different(original_profile_baseline, profile):
+                    print_info("⚠️  Datos modificados - recuerde guardar los cambios")
+                
+                print_success(f"✅ Sección '{section_names[choice]}' completada")
+                
+            elif choice == '7':
+                display_profile_summary(profile)
+                input("\nPresione Enter para continuar...")
+                
+            elif choice == '8':  # Guardar cambios
+                current_has_changes = profiles_are_different(original_profile_baseline, profile)
+                if current_has_changes:
+                    if save_profile(profile):
+                        print_success("✅ Cambios guardados exitosamente")
+                        # ✅ CORRECCIÓN: Actualizar baseline después de guardar
+                        original_profile_baseline = AthleteProfile.from_dict(profile.to_dict())
+                    else:
+                        print_error("❌ Error al guardar cambios")
+                else:
+                    print_info("💾 No hay cambios pendientes por guardar")
+                
+            elif choice == '9':  # Finalizar y salir
+                current_has_changes = profiles_are_different(original_profile_baseline, profile)
+                if current_has_changes:
+                    return handle_exit_with_changes_simple(profile, current_has_changes)
+                else:
+                    print_success("Saliendo sin cambios pendientes")
+                    return profile
+                
+            else:
+                print_error("Opción no válida. Por favor, seleccione una opción del menú.")
+                
+        except (KeyboardInterrupt, EOFError):
+            print_info("\n\nInterrupción detectada.")
+            current_has_changes = profiles_are_different(original_profile_baseline, profile)
+            if current_has_changes:
+                return handle_exit_with_changes_simple(profile, current_has_changes)
+            else:
+                print_success("Saliendo sin cambios pendientes")
+                return profile
+    
+    return profile
+
+
+def profiles_are_different(original: AthleteProfile, current: AthleteProfile) -> bool:
+    """
+    Compara perfiles para detectar cambios reales ignorando timestamps.
+    
+    Args:
+        original: Perfil original de referencia
+        current: Perfil actual para comparar
+    
+    Returns:
+        bool: True si los perfiles son diferentes
+    """
+    if original is None or current is None:
+        return original != current
+    
+    original_dict = original.to_dict()
+    current_dict = current.to_dict()
+    
+    # Ignorar timestamps que se generan automáticamente
+    original_dict.get('athlete_summary', {}).pop('generated_at', None)
+    current_dict.get('athlete_summary', {}).pop('generated_at', None)
+    
+    return original_dict != current_dict
+
+
+def load_existing_or_create_profile() -> AthleteProfile:
+    """Carga perfil existente o crea uno nuevo."""
+    if has_existing_profile():
+        print_success("Se encontró un perfil existente")
+        profile = load_profile()
+        
+        if not profile.name:
+            print_info("Perfil encontrado pero incompleto")
+        
+        return profile
+    else:
+        print_info("No se encontró perfil existente. Creando perfil nuevo...")
+        return create_empty_profile()
+
+
+def has_completed_injury_section(profile: AthleteProfile) -> bool:
+    """
+    Determina si la sección de lesiones está completada.
+    Se considera completada si hay lesiones registradas.
+    """
+    return bool(profile.injuries and len(profile.injuries) > 0)
+
+
+def show_main_menu(profile: AthleteProfile, has_changes: bool = False) -> str:
+    """Muestra el menú principal y devuelve la opción seleccionada."""
+    print_subtitle("MENÚ PRINCIPAL")
+    
+    # Mostrar indicador de cambios pendientes
+    if has_changes:
+        print_warning("⚠️  Hay cambios sin guardar en esta sesión")
+    else:
+        print_info("💾 Todos los cambios están guardados")
+    
+    # Calcular progreso
+    sections = [
+        ("Información Personal", bool(profile.name and profile.age and profile.gender)),
+        ("Métricas Fisiológicas", bool(profile.max_hr and profile.resting_hr)),
+        ("Contexto Entrenamiento", bool(profile.avg_weekly_km and profile.training_days_per_week)),
+        ("Datos Rendimiento", bool(profile.personal_bests and any(profile.personal_bests.values()))),
+        ("Objetivos Carrera", bool(profile.main_objective)),
+        ("Historial Lesiones", has_completed_injury_section(profile))
+    ]
+    
+    completed = sum(1 for _, is_complete in sections if is_complete)
+    total = len(sections)
+    
+    print_info(f"Progreso del perfil: {completed}/{total} secciones completadas")
+    
+    menu_options = {
+        '1': '📝 Información Personal' + (' ✅' if sections[0][1] else ' ⭕'),
+        '2': '💓 Métricas Fisiológicas' + (' ✅' if sections[1][1] else ' ⭕'),
+        '3': '🏃 Contexto de Entrenamiento' + (' ✅' if sections[2][1] else ' ⭕'),
+        '4': '🏆 Datos de Rendimiento' + (' ✅' if sections[3][1] else ' ⭕'),
+        '5': '🎯 Objetivos de Carrera' + (' ✅' if sections[4][1] else ' ⭕'),
+        '6': '🤕 Historial de Lesiones' + (' ✅' if sections[5][1] else ' ⭕'),
+        '7': '📊 Ver Resumen del Perfil',
+        '8': '💾 Guardar Cambios' + (' ⚠️' if has_changes else ' ✅'),
+        '9': '🚪 Finalizar y Salir'
+    }
+    
+    choice = prompt(
+        create_menu_options(menu_options),
+        validator=MenuValidator(list(menu_options.keys())),
+        style=APP_STYLE
+    ).strip()
+    
+    return choice
+
+
+class MenuValidator(Validator):
+    """Validador para opciones de menú que hereda correctamente de Validator."""
+    
+    def __init__(self, valid_options: List[str]):
+        self.valid_options = valid_options
+    
+    def validate(self, document: Document) -> None:
+        text = document.text.strip()
+        if text not in self.valid_options:
+            valid_list = ', '.join(self.valid_options)
+            raise ValidationError(
+                message=f'Opción inválida. Opciones válidas: {valid_list}',
+                cursor_position=len(text)
+            )
+
+
+def prompt_personal_info(profile: AthleteProfile) -> AthleteProfile:
+    """Solicita información personal básica."""
+    print_section_header("Información Personal")
+    
+    # Crear copia de seguridad del perfil al inicio de la sección
+    original_profile = AthleteProfile.from_dict(profile.to_dict())
+    
+    try:
+        # Nombre (obligatorio)
+        profile.name = prompt(
+            format_prompt_with_hint(
+                "Nombre completo", 
+                "nombre y apellidos", 
+                profile.name
+            ),
+            validator=name_validator,
+            default=profile.name or "",
+            style=APP_STYLE
+        ).strip()
+        
+        # Edad (obligatorio)
+        age_input = prompt(
+            format_prompt_with_hint(
+                "Edad", 
+                "años", 
+                profile.age
+            ),
+            validator=age_validator,
+            default=str(profile.age) if profile.age else "",
+            style=APP_STYLE
+        ).strip()
+        
+        if age_input:
+            profile.age = int(age_input)
+        
+        # Género (obligatorio con normalización)
+        gender_completer = WordCompleter(['Masculino', 'Femenino', 'Otro'], ignore_case=True)
+        gender_input = prompt(
+            format_prompt_with_hint(
+                "Género", 
+                "M/Masculino, F/Femenino, Otro", 
+                profile.gender
+            ),
+            completer=gender_completer,
+            default=profile.gender or "",
+            style=APP_STYLE
+        ).strip()
+        
+        if gender_input:
+            profile.gender = normalize_gender_input(gender_input)
+        
+        # Altura (opcional)
+        height_input = prompt(
+            format_prompt_with_hint(
+                "Altura en cm", 
+                "opcional - ej: 180", 
+                profile.height_cm
+            ),
+            validator=height_validator,
+            default=str(profile.height_cm) if profile.height_cm else "",
+            style=APP_STYLE
+        ).strip()
+        
+        if height_input:
+            profile.height_cm = int(height_input)
+        
+        # Peso (opcional)
+        weight_input = prompt(
+            format_prompt_with_hint(
+                "Peso en kg", 
+                "opcional - ej: 67.5", 
+                profile.weight_kg
+            ),
+            validator=weight_validator,
+            default=str(profile.weight_kg) if profile.weight_kg else "",
+            style=APP_STYLE
+        ).strip()
+        
+        if weight_input:
+            profile.weight_kg = float(weight_input.replace(',', '.'))
+        
+        # Validar datos físicos
+        physical_errors = validate_physical_metrics(profile.age, profile.weight_kg, profile.height_cm)
+        if physical_errors:
+            display_validation_errors(physical_errors)
+        
+        return profile
+        
+    except (KeyboardInterrupt, EOFError):
+        # CTRL+C durante entrada de datos: descartar cambios y volver
+        print_info("\n⚡ Entrada interrumpida - cambios de esta sección descartados")
+        print_info("↩️ Volviendo al menú principal...")
+        return original_profile
+
+
+def prompt_physiological_metrics(profile: AthleteProfile) -> AthleteProfile:
+    """Solicita métricas fisiológicas."""
+    print_section_header("Métricas Fisiológicas")
+    
+    # Crear copia de seguridad del perfil al inicio de la sección
+    original_profile = AthleteProfile.from_dict(profile.to_dict())
+    
+    try:
+        print_info("Estas métricas son clave para calcular zonas de entrenamiento precisas")
+        
+        # FC Máxima
+        max_hr_input = prompt(
+            format_prompt_with_hint(
+                "Frecuencia Cardíaca Máxima (FCmáx)", 
+                "pulsaciones por minuto - ej: 184", 
+                profile.max_hr
+            ),
+            validator=max_hr_validator,
+            default=str(profile.max_hr) if profile.max_hr else "",
+            style=APP_STYLE
+        ).strip()
+        
+        if max_hr_input:
+            profile.max_hr = int(max_hr_input)
+        
+        # FC Reposo
+        resting_hr_input = prompt(
+            format_prompt_with_hint(
+                "Frecuencia Cardíaca en Reposo (FCrep)", 
+                "pulsaciones por minuto - ej: 41", 
+                profile.resting_hr
+            ),
+            validator=resting_hr_validator,
+            default=str(profile.resting_hr) if profile.resting_hr else "",
+            style=APP_STYLE
+        ).strip()
+        
+        if resting_hr_input:
+            profile.resting_hr = int(resting_hr_input)
+        
+        # Validar coherencia de FC
+        if profile.max_hr and profile.resting_hr:
+            hr_errors = validate_heart_rates(profile.max_hr, profile.resting_hr)
+            if hr_errors:
+                display_validation_errors(hr_errors)
+            else:
+                print_success("Frecuencias cardíacas coherentes")
+                # Calcular zonas de entrenamiento automáticamente
+                profile.training_zones = calculate_training_zones(profile.max_hr, profile.resting_hr)
+                print_success("Zonas de entrenamiento calculadas automáticamente")
+        
+        # VO2 Máx (opcional)
+        vo2_input = prompt(
+            format_prompt_with_hint(
+                "VO2 Máximo", 
+                "opcional - ml/kg/min - ej: 60.0", 
+                profile.vo2_max
+            ),
+            validator=vo2_max_validator,
+            default=str(profile.vo2_max) if profile.vo2_max else "",
+            style=APP_STYLE
+        ).strip()
+        
+        if vo2_input:
+            profile.vo2_max = float(vo2_input.replace(',', '.'))
+        
+        # Umbral de Lactato (opcional)
+        lactate_input = prompt(
+            format_prompt_with_hint(
+                "Umbral de Lactato", 
+                "opcional - pulsaciones por minuto - ej: 179", 
+                profile.lactate_threshold_bpm
+            ),
+            validator=max_hr_validator,  # Mismo rango que FCmáx
+            default=str(profile.lactate_threshold_bpm) if profile.lactate_threshold_bpm else "",
+            style=APP_STYLE
+        ).strip()
+        
+        if lactate_input:
+            profile.lactate_threshold_bpm = int(lactate_input)
+        
+        # VFC (opcional)
+        hrv_input = prompt(
+            format_prompt_with_hint(
+                "Variabilidad de Frecuencia Cardíaca (VFC)", 
+                "opcional - milisegundos - ej: 45", 
+                profile.hrv_ms
+            ),
+            validator=OptionalIntegerValidator(10, 200),
+            default=str(profile.hrv_ms) if profile.hrv_ms else "",
+            style=APP_STYLE
+        ).strip()
+        
+        if hrv_input:
+            profile.hrv_ms = int(hrv_input)
+        
+        return profile
+        
+    except (KeyboardInterrupt, EOFError):
+        # CTRL+C durante entrada de datos: descartar cambios y volver
+        print_info("\n⚡ Entrada interrumpida - cambios de esta sección descartados")
+        print_info("↩️ Volviendo al menú principal...")
+        return original_profile
+
+
+def prompt_training_context(profile: AthleteProfile) -> AthleteProfile:
+    """Solicita contexto de entrenamiento."""
+    print_section_header("Contexto de Entrenamiento")
+    
+    # Crear copia de seguridad del perfil al inicio de la sección
+    original_profile = AthleteProfile.from_dict(profile.to_dict())
+    
+    try:
+        # Volumen semanal actual
+        weekly_km_input = prompt(
+            format_prompt_with_hint(
+                "Volumen semanal promedio actual", 
+                "kilómetros por semana - ej: 50.0", 
+                profile.avg_weekly_km
+            ),
+            validator=weekly_km_validator,
+            default=str(profile.avg_weekly_km) if profile.avg_weekly_km else "",
+            style=APP_STYLE
+        ).strip()
+        
+        if weekly_km_input:
+            profile.avg_weekly_km = float(weekly_km_input.replace(',', '.'))
+        
+        # Días de entrenamiento
+        days_input = prompt(
+            format_prompt_with_hint(
+                "Días de entrenamiento por semana", 
+                "ej: 4 o 4-5 para rango", 
+                profile.training_days_per_week
+            ),
+            validator=training_days_validator,
+            default=profile.training_days_per_week or "",
+            style=APP_STYLE
+        ).strip()
+        
+        if days_input:
+            profile.training_days_per_week = parse_training_days_input(days_input)
+        
+        # Historial de fuerza
+        strength_history_input = prompt(
+            format_prompt_with_hint(
+                "¿Ha realizado entrenamiento de fuerza anteriormente?", 
+                "S/Sí o N/No", 
+                "Sí" if profile.strength_training_history else "No" if profile.strength_training_history is not None else None
+            ),
+            validator=yes_no_validator,
+            default="Sí" if profile.strength_training_history else "No" if profile.strength_training_history is not None else "",
+            style=APP_STYLE
+        ).strip()
+        
+        if strength_history_input:
+            profile.strength_training_history = strength_history_input.lower() in ['sí', 'si', 's', 'yes', 'y']
+        
+        # Incluir fuerza en nuevo plan
+        include_strength_input = prompt(
+            format_prompt_with_hint(
+                "¿Desea incluir entrenamiento de fuerza en el nuevo plan?", 
+                "S/Sí o N/No", 
+                "Sí" if profile.include_strength_training else "No" if profile.include_strength_training is not None else None
+            ),
+            validator=yes_no_validator,
+            default="Sí" if profile.include_strength_training else "No" if profile.include_strength_training is not None else "",
+            style=APP_STYLE
+        ).strip()
+        
+        if include_strength_input:
+            profile.include_strength_training = include_strength_input.lower() in ['sí', 'si', 's', 'yes', 'y']
+        
+        # Preferencia días de calidad
+        quality_days_input = prompt(
+            format_prompt_with_hint(
+                "Preferencia días para sesiones de calidad", 
+                "ej: Martes, Jueves o Sin preferencia", 
+                profile.quality_session_preference
+            ),
+            default=profile.quality_session_preference or "",
+            style=APP_STYLE
+        ).strip()
+        
+        if quality_days_input:
+            profile.quality_session_preference = parse_quality_session_preference(quality_days_input)
+        
+        return profile
+        
+    except (KeyboardInterrupt, EOFError):
+        # CTRL+C durante entrada de datos: descartar cambios y volver
+        print_info("\n⚡ Entrada interrumpida - cambios de esta sección descartados")
+        print_info("↩️ Volviendo al menú principal...")
+        return original_profile
+
+
+def prompt_performance_data(profile: AthleteProfile) -> AthleteProfile:
+    """Solicita datos de rendimiento y marcas personales."""
+    print_section_header("Datos de Rendimiento")
+    
+    # Crear copia de seguridad del perfil al inicio de la sección
+    original_profile = AthleteProfile.from_dict(profile.to_dict())
+    
+    try:
+        print_info("Ingrese sus mejores marcas personales (puede omitir las que no tenga)")
+        
+        # Asegurar que personal_bests esté inicializado
+        if not profile.personal_bests:
+            profile.personal_bests = {}
+        
+        # Distancias estándar
+        standard_distances = [
+            ("5k", "5 Kilómetros"),
+            ("10k", "10 Kilómetros"),
+            ("half_marathon", "Media Maratón (21K)"),
+            ("marathon", "Maratón (42K)")
+        ]
+        
+        for key, description in standard_distances:
+            current_time = profile.personal_bests.get(key)
+            
+            time_input = prompt(
+                format_prompt_with_hint(
+                    f"Mejor marca en {description}", 
+                    "formato HH:MM:SS o MM:SS - opcional", 
+                    current_time
+                ),
+                validator=time_validator,
+                default=current_time or "",
+                style=APP_STYLE
+            ).strip()
+            
+            if time_input:
+                parsed_time = parse_time_input(time_input)
+                if parsed_time:
+                    profile.personal_bests[key] = parsed_time
+                    print_success(f"Marca en {description}: {parsed_time}")
+                else:
+                    print_warning(f"No se pudo parsear el tiempo: {time_input}")
+            elif current_time:
+                # Mantener tiempo existente si no se ingresa nada
+                profile.personal_bests[key] = current_time
+        
+        # Estimar VO2máx si no se tiene y hay marcas
+        if not profile.vo2_max and profile.age and profile.weight_kg:
+            best_time_for_estimation = None
+            best_distance = None
+            
+            # Buscar la mejor marca para estimación (preferir 10K o media maratón)
+            for distance_key, distance_km, description in [("10k", 10.0, "10K"), ("half_marathon", 21.097, "Media Maratón")]:
+                if profile.personal_bests.get(distance_key):
+                    best_time_for_estimation = profile.personal_bests[distance_key]
+                    best_distance = distance_km
+                    break
+            
+            if best_time_for_estimation:
+                from .calculations import estimate_vo2_max_from_time
+                estimated_vo2 = estimate_vo2_max_from_time(
+                    best_distance, 
+                    best_time_for_estimation, 
+                    profile.age, 
+                    profile.weight_kg
+                )
+                
+                if estimated_vo2:
+                    print_info(f"VO2máx estimado basado en marca personal: {estimated_vo2} ml/kg/min")
+                    if confirm_action("¿Desea usar esta estimación?", True):
+                        profile.vo2_max = estimated_vo2
+                        print_success(f"VO2máx establecido en: {estimated_vo2} ml/kg/min")
+        
+        return profile
+        
+    except (KeyboardInterrupt, EOFError):
+        # CTRL+C durante entrada de datos: descartar cambios y volver
+        print_info("\n⚡ Entrada interrumpida - cambios de esta sección descartados")
+        print_info("↩️ Volviendo al menú principal...")
+        return original_profile
+
+
+def prompt_race_goals(profile: AthleteProfile) -> AthleteProfile:
+    """Solicita objetivos de carrera."""
+    print_section_header("Objetivos de Carrera")
+    
+    # Crear copia de seguridad del perfil al inicio de la sección
+    original_profile = AthleteProfile.from_dict(profile.to_dict())
+    
+    try:
+        # Objetivo principal (obligatorio)
+        print_info("Defina su objetivo principal de carrera")
+        
+        if profile.main_objective:
+            print_success(f"Objetivo actual: {profile.main_objective.name} ({profile.main_objective.date})")
+            if not confirm_action("¿Desea modificar el objetivo principal?", False):
+                # Continuar con carreras intermedias
+                return prompt_intermediate_races(profile)
+        
+        # Nombre de la carrera
+        race_name = prompt(
+            format_prompt_with_hint(
+                "Nombre de la carrera objetivo", 
+                "ej: Media Maratón de Valencia",
+                profile.main_objective.name if profile.main_objective else None
+            ),
+            validator=name_validator,
+            default=profile.main_objective.name if profile.main_objective else "",
+            style=APP_STYLE
+        ).strip()
+        
+        # Fecha de la carrera
+        race_date = prompt(
+            format_prompt_with_hint(
+                "Fecha de la carrera", 
+                "formato YYYY-MM-DD - ej: 2024-11-30",
+                profile.main_objective.date if profile.main_objective else None
+            ),
+            validator=date_validator,
+            default=profile.main_objective.date if profile.main_objective else "",
+            style=APP_STYLE
+        ).strip()
+        
+        # Validar fecha
+        date_valid, date_error = validate_race_date(race_date, race_name)
+        if not date_valid:
+            print_error(date_error)
+            return profile  # Volver a intentar
+        elif date_error:  # Advertencia
+            print_warning(date_error)
+        
+        # Distancia
+        distance_input = prompt(
+            format_prompt_with_hint(
+                "Distancia en kilómetros", 
+                "ej: 21.097 para media maratón",
+                profile.main_objective.distance_km if profile.main_objective else None
+            ),
+            validator=distance_validator,
+            default=str(profile.main_objective.distance_km) if profile.main_objective else "",
+            style=APP_STYLE
+        ).strip()
+        
+        distance_km = float(distance_input.replace(',', '.'))
+        
+        # Tiempo objetivo (opcional)
+        goal_time = prompt(
+            format_prompt_with_hint(
+                "Tiempo objetivo", 
+                "opcional - formato HH:MM:SS - ej: 01:28:00",
+                profile.main_objective.goal_time if profile.main_objective else None
+            ),
+            validator=time_validator,
+            default=profile.main_objective.goal_time if profile.main_objective else "",
+            style=APP_STYLE
+        ).strip()
+        
+        if goal_time:
+            parsed_goal_time = parse_time_input(goal_time)
+            if parsed_goal_time:
+                goal_time = parsed_goal_time
+        
+        # Terreno
+        terrain_completer = WordCompleter(['Llano', 'Montañoso', 'Mixto', 'Trail', 'Pista'], ignore_case=True)
+        terrain = prompt(
+            format_prompt_with_hint(
+                "Tipo de terreno", 
+                "Llano, Montañoso, Mixto, Trail, Pista",
+                profile.main_objective.terrain if profile.main_objective else None
+            ),
+            completer=terrain_completer,
+            validator=terrain_validator,
+            default=profile.main_objective.terrain if profile.main_objective else "",
+            style=APP_STYLE
+        ).strip()
+        
+        # Crear objetivo principal
+        profile.main_objective = Race(
+            name=race_name,
+            date=race_date,
+            distance_km=distance_km,
+            goal_time=goal_time if goal_time else None,
+            terrain=terrain.title()
+        )
+        
+        print_success(f"Objetivo principal establecido: {race_name}")
+        
+        # Sugerir duración de plan
+        suggested_weeks = suggest_training_weeks(race_date)
+        print_info(f"Sugerencia: Plan de {suggested_weeks} semanas basado en fecha objetivo")
+        
+        # Carreras intermedias
+        return prompt_intermediate_races(profile)
+        
+    except (KeyboardInterrupt, EOFError):
+        # CTRL+C durante entrada de datos: descartar cambios y volver
+        print_info("\n⚡ Entrada interrumpida - cambios de esta sección descartados")
+        print_info("↩️ Volviendo al menú principal...")
+        return original_profile
+
+
+def prompt_intermediate_races(profile: AthleteProfile) -> AthleteProfile:
+    """Solicita carreras intermedias."""
+    try:
+        print_info("\nCarreras intermedias sirven como preparación y test")
+        
+        display_race_summary(profile.intermediate_races)
+        
+        while True:
+            if confirm_action("¿Desea añadir una carrera intermedia?", False):
+                race = create_intermediate_race()
+                if race:
+                    profile.intermediate_races.append(race)
+                    print_success(f"Carrera añadida: {race.name}")
+            else:
+                break
+        
+        return profile
+        
+    except (KeyboardInterrupt, EOFError):
+        # Para sub-secciones, simplemente retornar el perfil actual
+        return profile
+
+
+def create_intermediate_race() -> Optional[Race]:
+    """Crea una carrera intermedia."""
+    try:
+        name = prompt(
+            format_prompt_with_hint("Nombre de la carrera", "ej: 10K de la Ciudad"),
+            validator=name_validator,
+            style=APP_STYLE
+        ).strip()
+        
+        date = prompt(
+            format_prompt_with_hint("Fecha", "YYYY-MM-DD"),
+            validator=date_validator,
+            style=APP_STYLE
+        ).strip()
+        
+        distance = prompt(
+            format_prompt_with_hint("Distancia en km", "ej: 10.0"),
+            validator=distance_validator,
+            style=APP_STYLE
+        ).strip()
+        
+        goal_time = prompt(
+            format_prompt_with_hint("Tiempo objetivo", "opcional - HH:MM:SS"),
+            validator=time_validator,
+            style=APP_STYLE
+        ).strip()
+        
+        terrain = prompt(
+            format_prompt_with_hint("Tipo de terreno", "Llano, Montañoso, etc."),
+            validator=terrain_validator,
+            style=APP_STYLE
+        ).strip()
+        
+        return Race(
+            name=name,
+            date=date,
+            distance_km=float(distance.replace(',', '.')),
+            goal_time=parse_time_input(goal_time) if goal_time else None,
+            terrain=terrain.title()
+        )
+        
+    except (KeyboardInterrupt, EOFError):
+        return None
+
+
+def manage_injury_history(profile: AthleteProfile) -> AthleteProfile:
+    """Gestiona el historial de lesiones."""
+    print_section_header("Historial de Lesiones")
+    
+    # Crear copia de seguridad del perfil al inicio de la sección
+    original_profile = AthleteProfile.from_dict(profile.to_dict())
+    
+    try:
+        print_info("Las lesiones pasadas ayudan a personalizar el plan de entrenamiento")
+        
+        display_injury_summary(profile.injuries)
+        
+        while True:
+            if not profile.injuries:
+                if not confirm_action("¿Ha tenido alguna lesión relacionada con el running?", False):
+                    break
+            else:
+                if not confirm_action("¿Desea añadir otra lesión?", False):
+                    break
+            
+            injury = create_injury()
+            if injury:
+                profile.injuries.append(injury)
+                print_success(f"Lesión añadida: {injury.type}")
+        
+        return profile
+        
+    except (KeyboardInterrupt, EOFError):
+        # CTRL+C durante entrada de datos: descartar cambios y volver
+        print_info("\n⚡ Entrada interrumpida - cambios de esta sección descartados")
+        print_info("↩️ Volviendo al menú principal...")
+        return original_profile
+
+
+def create_injury() -> Optional[Injury]:
+    """Crea una lesión."""
+    try:
+        injury_type = prompt(
+            format_prompt_with_hint("Tipo de lesión", "ej: Fascitis Plantar, Tendinitis Aquiles"),
+            validator=name_validator,
+            style=APP_STYLE
+        ).strip()
+        
+        date_approx = prompt(
+            format_prompt_with_hint("Fecha aproximada", "ej: 2022-10 o Hace 2 años"),
+            style=APP_STYLE
+        ).strip()
+        
+        recovery_desc = prompt(
+            format_prompt_with_hint("Descripción de recuperación", "ej: Fisioterapia y descanso 6 semanas"),
+            style=APP_STYLE
+        ).strip()
+        
+        return Injury(
+            type=injury_type,
+            date_approx=date_approx,
+            recovery_desc=recovery_desc
+        )
+        
+    except (KeyboardInterrupt, EOFError):
+        return None
+
+
+def handle_exit_with_changes_simple(profile: AthleteProfile, has_changes: bool) -> AthleteProfile:
+    """Versión simplificada del manejo de salida."""
+    if not has_changes:
+        return profile
+    
+    print_warning("⚠️  Hay cambios sin guardar")
+    
+    if confirm_action("¿Desea guardar los cambios antes de salir?", True):
+        if save_profile(profile):
+            print_success("✅ Cambios guardados exitosamente")
+            return profile
+        else:
+            print_error("❌ Error al guardar")
+            return profile
+    else:
+        print_info("🗑️  Cambios descartados - saliendo sin guardar")
+        return profile
+
+
+def get_missing_required_data(profile: AthleteProfile) -> List[str]:
+    """Identifica datos requeridos faltantes."""
+    missing = []
+    
+    if not profile.name:
+        missing.append("Nombre del atleta")
+    if not profile.age:
+        missing.append("Edad")
+    if not profile.gender:
+        missing.append("Género")
+    if not profile.main_objective:
+        missing.append("Objetivo principal de carrera")
+    
+    return missing
+
+
+def display_race_summary(races: List) -> None:
+    """Muestra resumen de carreras registradas."""
+    if not races:
+        print_info("No hay carreras intermedias registradas")
+        return
+    
+    print_section_header(f"Carreras Intermedias ({len(races)})")
+    
+    for i, race in enumerate(races, 1):
+        from .calculations import format_distance_for_display
+        distance_display = format_distance_for_display(race.distance_km)
+        
+        print_info(f"{i}. {race.name} - {distance_display} ({race.date})")
+        if race.goal_time:
+            print_info(f"   Meta: {race.goal_time}")
+
+
+def display_injury_summary(injuries: List) -> None:
+    """Muestra resumen de lesiones registradas."""
+    if not injuries:
+        print_info("No hay lesiones registradas")
+        return
+    
+    print_section_header(f"Lesiones Registradas ({len(injuries)})")
+    
+    for i, injury in enumerate(injuries, 1):
+        print_info(f"{i}. {injury.type} ({injury.date_approx}) - {injury.recovery_desc}")
+
+
+# Clase auxiliar para validación opcional de enteros
+class OptionalIntegerValidator:
+    """Validador para enteros opcionales con rangos."""
+    def __init__(self, min_val: int = None, max_val: int = None):
+        self.min_val = min_val
+        self.max_val = max_val
+    
+    def validate(self, document) -> None:
+        from prompt_toolkit.validation import ValidationError
+        text = document.text.strip()
+        
+        if not text:
+            return  # Opcional
+        
+        try:
+            value = int(text)
+            if self.min_val and value < self.min_val:
+                raise ValidationError(message=f'Valor debe ser ≥ {self.min_val}')
+            if self.max_val and value > self.max_val:
+                raise ValidationError(message=f'Valor debe ser ≤ {self.max_val}')
+        except ValueError:
+            raise ValidationError(message='Ingrese un número entero válido')
+
+
+def main():
+    """Función principal para testing independiente del módulo CLI."""
+    try:
+        profile = start_interactive_cli()
+        print_success(f"\n¡CLI completada! Perfil de {profile.name} listo.")
+        
+        if profile.is_complete():
+            print_success("Perfil completo y listo para las siguientes fases")
+        else:
+            print_warning("Perfil incompleto - puede completarse en futuras sesiones")
+            
+    except Exception as e:
+        print_error(f"Error en CLI: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
