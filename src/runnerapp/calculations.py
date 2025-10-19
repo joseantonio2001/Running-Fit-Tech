@@ -153,7 +153,8 @@ def parse_time_input(input_str: str) -> Optional[str]:
     """
     Normaliza entrada de tiempo deportivo a formato HH:MM:SS.
     
-    Acepta múltiples formatos y añade segundos si no se especifican.
+    CORREGIDO: Maneja correctamente MM:SS como minutos:segundos,
+    no como horas:minutos.
     
     Args:
         input_str: Tiempo en diversos formatos (ej: "18:30", "1:25:00", "18'30")
@@ -162,21 +163,23 @@ def parse_time_input(input_str: str) -> Optional[str]:
         Optional[str]: Tiempo normalizado o None si formato inválido
     
     Examples:
-        >>> parse_time_input("18:30")
+        >>> parse_time_input("18:30")  # 18 minutos, 30 segundos
         '00:18:30'
-        >>> parse_time_input("1:25:30")
+        >>> parse_time_input("1:25:30")  # 1 hora, 25 minutos, 30 segundos
         '01:25:30'
+        >>> parse_time_input("10:00")  # 10 minutos, 0 segundos
+        '00:10:00'
     """
     if not input_str:
         return None
     
     # Limpiar entrada y reemplazar caracteres comunes
-    cleaned = input_str.strip().replace("'", ":").replace("\"", "")
+    cleaned = input_str.strip().replace("'", ":").replace('"', "")
     
     # Patrones para diferentes formatos
     patterns = [
         r'^(\d{1,2}):(\d{2}):(\d{2})$',  # HH:MM:SS
-        r'^(\d{1,2}):(\d{2})$',          # HH:MM (añadir :00)
+        r'^(\d{1,2}):(\d{2})$',          # MM:SS (formato más común en running)
         r'^(\d+)\.(\d{2})\.(\d{2})$',    # H.MM.SS (formato alemán)
         r'^(\d+)h(\d{2})m(\d{2})s$',     # 1h25m30s
         r'^(\d+)h(\d{2})m$',             # 1h25m (añadir segundos)
@@ -187,9 +190,16 @@ def parse_time_input(input_str: str) -> Optional[str]:
         if match:
             groups = match.groups()
             
-            if len(groups) == 2:  # HH:MM format
-                hours, minutes = int(groups[0]), int(groups[1])
-                seconds = 0
+            if len(groups) == 2:  # MM:SS format - CORRECCIÓN AQUÍ
+                # ✅ CORRECCIÓN: Interpretar como minutos:segundos, NO horas:minutos
+                minutes, seconds = int(groups[0]), int(groups[1])
+                hours = 0
+                
+                # Si los minutos son >= 60, convertir a horas
+                if minutes >= 60:
+                    hours = minutes // 60
+                    minutes = minutes % 60
+                    
             else:  # HH:MM:SS format
                 hours, minutes, seconds = int(groups[0]), int(groups[1]), int(groups[2])
             
@@ -197,7 +207,7 @@ def parse_time_input(input_str: str) -> Optional[str]:
             if minutes >= 60 or seconds >= 60:
                 return None
             
-            # Formatear como HH:MM:SS
+            # ✅ FORMATEAR CORRECTAMENTE: Asegurar que las horas sean 2 dígitos
             return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
     
     return None

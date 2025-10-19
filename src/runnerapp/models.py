@@ -3,7 +3,7 @@ Modelo de Datos Central - Ficha Técnica del Atleta
 
 Este módulo define la estructura completa del modelo de datos que actúa como
 la "Single Source of Truth" de la aplicación. El diseño no solo está pensado
-para almacenamiento interno, sino optimizado para actuar como un prompt 
+para almacenamiento interno, sino optimizado para actuar como un prompt
 estructurado y auto-explicativo para la IA externa.
 
 Utiliza dataclasses de Python con tipado estático para garantizar:
@@ -173,7 +173,10 @@ class AthleteProfile:
                 "quality_session_preference": self.quality_session_preference
             },
             "performance_data": {
-                "personal_bests": self.personal_bests,
+                # ✅ CORRECCIÓN: Se crea una copia del diccionario para evitar
+                # la modificación por referencia, solucionando el bug de
+                # detección de cambios.
+                "personal_bests": self.personal_bests.copy(),
                 "training_zones": {
                     "zone1_hr": self.training_zones.zone1_hr if self.training_zones else None,
                     "zone2_hr": self.training_zones.zone2_hr if self.training_zones else None,
