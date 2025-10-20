@@ -22,7 +22,7 @@ para el entrenador virtual.
 """
 
 from dataclasses import dataclass, field
-from typing import Optional, List, Dict
+from typing import Any, Optional, List, Dict
 from datetime import datetime
 import json
 
@@ -36,6 +36,27 @@ class Injury:
     type: str = ""
     date_approx: str = ""
     recovery_desc: str = ""
+    current_status: Optional[str] = None  # ✅ NUEVO
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convierte a diccionario para serialización JSON."""
+        return {
+            "type": self.type,
+            "date_approx": self.date_approx,
+            "recovery_desc": self.recovery_desc,
+            "current_status": self.current_status  # ✅ NUEVO
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Injury':
+        """Crea instancia desde diccionario."""
+        return cls(
+            type=data.get("type", ""),
+            date_approx=data.get("date_approx", ""),
+            recovery_desc=data.get("recovery_desc", ""),
+            current_status=data.get("current_status")  # ✅ NUEVO
+        )
+
 
 @dataclass
 class Race:
@@ -241,7 +262,8 @@ class AthleteProfile:
             injuries_list.append({
                 'type': injury.type,
                 'date_approx': injury.date_approx,
-                'recovery_desc': injury.recovery_desc
+                'recovery_desc': injury.recovery_desc,
+                'current_status': injury.current_status
             })
         
         return {

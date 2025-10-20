@@ -25,6 +25,7 @@ Características principales:
 """
 
 import sys
+from copy import deepcopy
 from typing import Optional, Dict, List
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
@@ -135,16 +136,16 @@ def start_interactive_cli(existing_profile: Optional[AthleteProfile] = None) -> 
                 input("\nPresione Enter para continuar...")
                 
             elif choice == '8':  # Guardar cambios
-                current_has_changes = profiles_are_different(original_profile_baseline, profile)
-                if current_has_changes:
-                    if save_profile(profile):
-                        print_success("✅ Cambios guardados exitosamente")
-                        # ✅ CORRECCIÓN: Actualizar baseline después de guardar
-                        original_profile_baseline = AthleteProfile.from_dict(profile.to_dict())
-                    else:
-                        print_error("❌ Error al guardar cambios")
-                else:
-                    print_info("💾 No hay cambios pendientes por guardar")
+                            current_has_changes = profiles_are_different(original_profile_baseline, profile)
+                            if current_has_changes:
+                                if save_profile(profile):
+                                    print_success("✅ Cambios guardados exitosamente")
+                                    # Usa deepcopy para crear una copia independiente y actualizada
+                                    original_profile_baseline = deepcopy(profile)
+                                else:
+                                    print_error("❌ Error al guardar cambios")
+                            else:
+                                print_info("💾 No hay cambios pendientes por guardar")
                     
             elif choice == '9':  # Finalizar y salir
                 current_has_changes = profiles_are_different(original_profile_baseline, profile)
@@ -462,9 +463,6 @@ def prompt_physiological_metrics(profile: AthleteProfile) -> AthleteProfile:
 def prompt_training_context(profile: AthleteProfile) -> AthleteProfile:
     """
     Solicita contexto de entrenamiento CON NUEVOS CAMPOS TÉCNICOS.
-    
-    ✅ AÑADIDOS: 3 nuevos campos técnicos
-    ✅ MODIFICADO: Incluye validación en bucle para días no disponibles
     """
     print_section_header("Contexto de Entrenamiento")
     
@@ -472,6 +470,26 @@ def prompt_training_context(profile: AthleteProfile) -> AthleteProfile:
     original_profile = AthleteProfile.from_dict(profile.to_dict())
     
     try:
+
+        # ✅ NUEVO CAMPO 2: Período de Entrenamiento Actual
+        current_period_input = prompt(
+            format_prompt_with_hint(
+                "Período de entrenamiento actual",
+                "tiempo entrenando actualmente - ej: '3 semanas', '2 meses', '0 - empezando'",
+                profile.current_training_period
+            ),
+            validator=TrainingPeriodValidator(),
+            default=profile.current_training_period or "",
+            style=APP_STYLE
+        ).strip()
+        if current_period_input:
+            normalized_period = parse_training_period(current_period_input)
+            profile.current_training_period = normalized_period
+            
+            # Mostrar confirmación si se normalizó
+            if normalized_period != current_period_input:
+                print_success(f"✅ Período normalizado a: '{normalized_period}'")        
+
         # Volumen semanal actual
         weekly_km_input = prompt(
             format_prompt_with_hint(
@@ -514,25 +532,6 @@ def prompt_training_context(profile: AthleteProfile) -> AthleteProfile:
         if experience_input:
             profile.running_experience_years = float(experience_input.replace(',', '.'))
         
-        # ✅ NUEVO CAMPO 2: Período de Entrenamiento Actual
-        current_period_input = prompt(
-            format_prompt_with_hint(
-                "Período de entrenamiento actual",
-                "tiempo entrenando actualmente - ej: '3 semanas', '2 meses', '0 - empezando'",
-                profile.current_training_period
-            ),
-            validator=TrainingPeriodValidator(),
-            default=profile.current_training_period or "",
-            style=APP_STYLE
-        ).strip()
-        if current_period_input:
-            normalized_period = parse_training_period(current_period_input)
-            profile.current_training_period = normalized_period
-            
-            # Mostrar confirmación si se normalizó
-            if normalized_period != current_period_input:
-                print_success(f"✅ Período normalizado a: '{normalized_period}'")        
-
         # CAMPO EXISTENTE: Días disponibles para entrenar (acepta rangos)
         available_days_input = prompt(
             format_prompt_with_hint(
@@ -1140,11 +1139,22 @@ def edit_injury(injury: Injury) -> Optional[Injury]:
             default=injury.recovery_desc,
             style=APP_STYLE
         ).strip()
+
+        current_status = prompt(
+            format_prompt_with_hint(
+                "Estado actual", 
+                "opcional - ej: 'molestias leves', 'limitación de movimiento', 'sin síntomas'",
+                injury.current_status  # Valor actual de la lesión
+            ),
+            default=injury.current_status or "",
+            style=APP_STYLE
+        ).strip()
         
         return Injury(
             type=injury_type,
             date_approx=date_approx,
-            recovery_desc=recovery_desc
+            recovery_desc=recovery_desc,
+            current_status=current_status if current_status else None  # ✅ NUEVO
         )
         
     except (KeyboardInterrupt, EOFError):
@@ -1169,14 +1179,26 @@ def create_injury() -> Optional[Injury]:
             style=APP_STYLE
         ).strip()
         
+        # ✅ NUEVA PREGUNTA
+        current_status = prompt(
+            format_prompt_with_hint(
+                "Estado actual", # El prompt principal
+                "opcional - ej: 'molestias leves', 'limitación de movimiento', 'sin síntomas' (vacío = no especificado)",
+                None
+            ),
+            style=APP_STYLE
+        ).strip()
+        
         return Injury(
             type=injury_type,
             date_approx=date_approx,
-            recovery_desc=recovery_desc
+            recovery_desc=recovery_desc,
+            current_status=current_status if current_status else None  # ✅ NUEVO
         )
         
     except (KeyboardInterrupt, EOFError):
         return None
+
 
 def handle_exit_with_changes_simple(profile: AthleteProfile, has_changes: bool) -> AthleteProfile:
     """Versión simplificada del manejo de salida."""
@@ -1233,6 +1255,8 @@ def display_injury_summary(injuries: List) -> None:
     for i, injury in enumerate(injuries, 1):
         print_info(f"  {i}. {injury.type} ({injury.date_approx})")
         print_info(f"     🏥 Recuperación: {injury.recovery_desc}")
+        status = injury.current_status or "No especificado"
+        print_info(f"     📊 Estado actual: {status}")
 
 # ✅ Clases auxiliares para validación
 class OptionalIntegerValidator(Validator):

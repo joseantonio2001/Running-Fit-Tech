@@ -274,7 +274,8 @@ def _build_injury_history_section(profile: AthleteProfile) -> Dict[str, Any]:
             section["injuries"].append({
                 "type": injury.type,
                 "date_approx": injury.date_approx,
-                "recovery_desc": injury.recovery_desc
+                "recovery_desc": injury.recovery_desc,
+                "current_status": injury.current_status or "No especificado"  # ✅ NUEVO CAMPO
             })
         
         section["injury_analysis"] = _analyze_injury_patterns(profile.injuries)

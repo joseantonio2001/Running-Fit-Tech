@@ -109,20 +109,29 @@ def format_current_value(field_name: str, current_value: Any) -> str:
     else:
         return f"{field_name} (actual: {current_value})"
 
-def format_prompt_with_hint(prompt: str, hint: str = "", current_value: Any = None) -> FormattedText:
-    """Crea un prompt formateado con pista y valor actual."""
+# Dentro de cli_helpers.py
+
+def format_prompt_with_hint(prompt_text: str, hint: str = "", current_value: Any = None) -> FormattedText:
+    """Crea un prompt formateado con pista y valor actual (versión corregida)."""
     parts = []
-    
-    if current_value is not None and current_value != "":
-        parts.append(('class:question', f"{prompt} "))
+    # Etiqueta principal del prompt
+    prompt_label = f"{prompt_text}"
+
+    # Añadir valor actual si existe y no está vacío
+    if current_value is not None and str(current_value).strip() != "":
+        parts.append(('class:question', f"{prompt_label} "))
         parts.append(('class:value', f"[actual: {current_value}]"))
-        parts.append(('class:question', ": "))
     else:
-        parts.append(('class:question', f"{prompt}: "))
-    
-    if hint:
-        parts.insert(-1, ('class:hint', f" ({hint}) "))
-    
+        # Si no hay valor actual, solo la etiqueta
+        parts.append(('class:question', prompt_label))
+
+    # Añadir la pista si existe y no está vacía, ANTES de los dos puntos
+    if hint and hint.strip():
+        parts.append(('class:hint', f" ({hint.strip()})")) # strip() para eliminar espacios extra
+
+    # Añadir los dos puntos al final
+    parts.append(('class:question', ": "))
+
     return FormattedText(parts)
 
 def create_menu_options(options: Dict[str, str], title: str = "Opciones disponibles") -> FormattedText:

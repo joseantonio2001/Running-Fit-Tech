@@ -545,6 +545,11 @@ def _build_complete_training_context_section_with_new_fields(profile: AthletePro
     content.append(section_title)
     content.append(Spacer(1, BALANCED_TITLE_CONTENT_SPACING))
     
+    # ✅ NUEVO CAMPO 2: PERÍODO ACTUAL
+    period_value = profile.current_training_period if profile.current_training_period else "No proporcionado"
+    period_text = Paragraph(f"<b>PERÍODO ACTUAL</b> · {period_value}", PDF_STYLES['data_text'])
+    content.append(period_text)
+
     # ✅ VOLUMEN SEMANAL - Siempre mostrado con Helvetica-Bold para nombre del campo
     volume_value = f"{profile.avg_weekly_km} km/semana" if profile.avg_weekly_km else "No proporcionado"
     volume_text = Paragraph(f"<b>VOLUMEN SEMANAL</b> · {volume_value}", PDF_STYLES['data_text'])
@@ -559,11 +564,6 @@ def _build_complete_training_context_section_with_new_fields(profile: AthletePro
     experience_value = f"{profile.running_experience_years} años" if profile.running_experience_years else "No proporcionado"
     experience_text = Paragraph(f"<b>EXPERIENCIA DEPORTIVA</b> · {experience_value}", PDF_STYLES['data_text'])
     content.append(experience_text)
-    
-    # ✅ NUEVO CAMPO 2: PERÍODO ACTUAL
-    period_value = profile.current_training_period if profile.current_training_period else "No proporcionado"
-    period_text = Paragraph(f"<b>PERÍODO ACTUAL</b> · {period_value}", PDF_STYLES['data_text'])
-    content.append(period_text)
     
     # ✅ HISTORIAL FUERZA - Siempre mostrado con Helvetica-Bold para nombre del campo
     if profile.strength_training_history is not None:
@@ -724,17 +724,22 @@ def _build_balanced_injury_history_section(profile: AthleteProfile) -> list:
     
     if profile.injuries:
         for i, injury in enumerate(profile.injuries):
-            injury_text = f"<b>LESIÓN</b> · {(injury.type or 'NO ESPECIFICADA').upper()}"
+            injury_text = f"LESIÓN · {(injury.type or 'NO ESPECIFICADA').upper()}"
             injury_para = Paragraph(injury_text, PDF_STYLES['data_text'])
             content.append(injury_para)
             
-            date_text = f"<b>FECHA</b> · {injury.date_approx or 'Sin fecha registrada'}"
+            date_text = f"FECHA · {injury.date_approx or 'Sin fecha registrada'}"
             date_para = Paragraph(date_text, PDF_STYLES['data_text'])
             content.append(date_para)
             
-            recovery_text = f"<b>RECUPERACIÓN</b> · {injury.recovery_desc or 'Sin información detallada'}"
+            recovery_text = f"RECUPERACIÓN · {injury.recovery_desc or 'Sin información detallada'}"
             recovery_para = Paragraph(recovery_text, PDF_STYLES['data_text'])
             content.append(recovery_para)
+            
+            # ✅ NUEVO CAMPO - Estado actual
+            status_text = f"ESTADO ACTUAL · {(injury.current_status or 'No especificado').upper()}"
+            status_para = Paragraph(status_text, PDF_STYLES['data_text'])
+            content.append(status_para)
             
             if i < len(profile.injuries) - 1:
                 content.append(Spacer(1, 8))
