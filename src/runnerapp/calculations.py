@@ -17,7 +17,6 @@ from typing import Optional, List, Tuple, Dict
 from datetime import datetime, date
 from .models import TrainingZones
 
-
 def normalize_gender_input(input_str: str) -> str:
     """
     Normaliza entrada de género a formato estándar.
@@ -34,127 +33,33 @@ def normalize_gender_input(input_str: str) -> str:
     Examples:
         >>> normalize_gender_input("M")
         'Masculino'
-        >>> normalize_gender_input("mujer")
+        >>> normalize_gender_input("mujer")  
         'Femenino'
+        >>> normalize_gender_input("other")
+        'Otro'
     """
     if not input_str:
         return ""
     
-    # Convertir a minúsculas para comparación
-    normalized_input = input_str.strip().lower()
+    input_lower = input_str.lower().strip()
     
-    # Mapeo de variaciones a valores estándar
-    male_variations = {
-        'm', 'male', 'masculino', 'hombre', 'man', 'varón', 'varon'
-    }
+    # Mapeo de entradas comunes a valores normalizados
+    masculine_inputs = ['m', 'masculino', 'hombre', 'male', 'man']
+    feminine_inputs = ['f', 'femenino', 'mujer', 'female', 'woman']
     
-    female_variations = {
-        'f', 'female', 'femenino', 'mujer', 'woman', 'fem'
-    }
-    
-    if normalized_input in male_variations:
+    if input_lower in masculine_inputs:
         return "Masculino"
-    elif normalized_input in female_variations:
+    elif input_lower in feminine_inputs:
         return "Femenino"
     else:
         return "Otro"
-
-
-def normalize_day_of_week_input(input_str: str) -> str:
-    """
-    Normaliza entrada de día de semana a formato completo.
-    
-    Args:
-        input_str: Entrada del usuario (ej: "L", "lun", "Lunes")
-    
-    Returns:
-        str: Día completo en español ("Lunes", "Martes", etc.)
-    
-    Examples:
-        >>> normalize_day_of_week_input("L")
-        'Lunes'
-        >>> normalize_day_of_week_input("mier")
-        'Miércoles'
-    """
-    if not input_str:
-        return ""
-    
-    normalized_input = input_str.strip().lower()
-    
-    # Mapeo de abreviaciones y variaciones
-    day_mapping = {
-        'l': 'Lunes', 'lun': 'Lunes', 'lunes': 'Lunes',
-        'm': 'Martes', 'mar': 'Martes', 'martes': 'Martes',
-        'x': 'Miércoles', 'mie': 'Miércoles', 'mier': 'Miércoles', 
-        'miércoles': 'Miércoles', 'miercoles': 'Miércoles',
-        'j': 'Jueves', 'jue': 'Jueves', 'jueves': 'Jueves',
-        'v': 'Viernes', 'vie': 'Viernes', 'viernes': 'Viernes',
-        's': 'Sábado', 'sab': 'Sábado', 'sábado': 'Sábado', 'sabado': 'Sábado',
-        'd': 'Domingo', 'dom': 'Domingo', 'domingo': 'Domingo'
-    }
-    
-    return day_mapping.get(normalized_input, input_str.strip())
-
-
-def parse_training_days_input(input_str: str) -> str:
-    """
-    Normaliza y valida entrada de días de entrenamiento.
-    
-    Acepta formatos como "4", "4-5", "3 a 4", validando coherencia.
-    
-    Args:
-        input_str: Entrada del usuario
-    
-    Returns:
-        str: Formato normalizado o entrada original si no se reconoce
-    
-    Examples:
-        >>> parse_training_days_input("4-5")
-        '4-5'
-        >>> parse_training_days_input("3 a 4")
-        '3-4'
-    """
-    if not input_str:
-        return ""
-    
-    # Limpiar entrada
-    cleaned = input_str.strip().lower()
-    
-    # Patrón para rangos: "3-4", "3 a 4", "3 - 4"
-    range_pattern = r'^(\d+)\s*[-a]\s*(\d+)$'
-    range_match = re.match(range_pattern, cleaned)
-    
-    if range_match:
-        start = int(range_match.group(1))
-        end = int(range_match.group(2))
-        
-        # Validar coherencia del rango
-        if start > end:
-            start, end = end, start  # Intercambiar si están al revés
-        
-        if start < 1 or end > 7:
-            return input_str.strip()  # Devolver original si fuera de rango
-        
-        return f"{start}-{end}"
-    
-    # Patrón para número simple
-    single_pattern = r'^(\d+)$'
-    single_match = re.match(single_pattern, cleaned)
-    
-    if single_match:
-        days = int(single_match.group(1))
-        if 1 <= days <= 7:
-            return str(days)
-    
-    return input_str.strip()  # Devolver entrada original si no se reconoce
-
 
 def parse_time_input(input_str: str) -> Optional[str]:
     """
     Normaliza entrada de tiempo deportivo a formato HH:MM:SS.
     
     CORREGIDO: Maneja correctamente MM:SS como minutos:segundos,
-    no como horas:minutos.
+    no como horas:minutos como se interpretaba erróneamente antes.
     
     Args:
         input_str: Tiempo en diversos formatos (ej: "18:30", "1:25:00", "18'30")
@@ -167,8 +72,6 @@ def parse_time_input(input_str: str) -> Optional[str]:
         '00:18:30'
         >>> parse_time_input("1:25:30")  # 1 hora, 25 minutos, 30 segundos
         '01:25:30'
-        >>> parse_time_input("10:00")  # 10 minutos, 0 segundos
-        '00:10:00'
     """
     if not input_str:
         return None
@@ -212,188 +115,314 @@ def parse_time_input(input_str: str) -> Optional[str]:
     
     return None
 
+def parse_training_days_input(input_str: str) -> str:
+    """
+    Normaliza entrada de días de entrenamiento.
+    
+    Args:
+        input_str: Días en diversos formatos (ej: "4", "4-5", "3 a 4")
+    
+    Returns:
+        str: Formato normalizado
+    """
+    if not input_str:
+        return ""
+    
+    cleaned = input_str.strip().lower()
+    
+    # Reemplazar variantes de separadores
+    cleaned = cleaned.replace(" a ", "-").replace(" y ", "-").replace(",", "-")
+    
+    # Normalizar formato
+    if re.match(r'^\d+$', cleaned):  # Número simple
+        return cleaned
+    elif re.match(r'^\d+-\d+$', cleaned):  # Rango
+        return cleaned
+    else:
+        return input_str  # Devolver original si no se puede normalizar
+
+def parse_unavailable_days_input(input_str: str) -> str:
+    """
+    NUEVA FUNCIÓN: Normaliza entrada de días no disponibles.
+    
+    Acepta formatos como:
+    - "Domingo" -> "Domingo"
+    - "D" -> "Domingo"  
+    - "L,D" -> "Lunes,Domingo"
+    - "Lunes, Domingo" -> "Lunes,Domingo"
+    
+    Args:
+        input_str: Días no disponibles en diversos formatos
+        
+    Returns:
+        str: Formato normalizado (días completos separados por comas)
+    """
+    if not input_str:
+        return ""
+    
+    # Mapeo de abreviaciones a nombres completos
+    day_map = {
+        'l': 'Lunes', 'lunes': 'Lunes',
+        'm': 'Martes', 'martes': 'Martes', 'mar': 'Martes',
+        'x': 'Miércoles', 'miércoles': 'Miércoles', 'mie': 'Miércoles', 'miercoles': 'Miércoles',
+        'j': 'Jueves', 'jueves': 'Jueves', 'jue': 'Jueves',
+        'v': 'Viernes', 'viernes': 'Viernes', 'vie': 'Viernes',
+        's': 'Sábado', 'sábado': 'Sábado', 'sab': 'Sábado', 'sabado': 'Sábado',
+        'd': 'Domingo', 'domingo': 'Domingo', 'dom': 'Domingo'
+    }
+    
+    # Limpiar y separar por comas
+    cleaned = input_str.strip().lower()
+    days = [day.strip() for day in re.split(r'[,;]', cleaned)]
+    
+    normalized_days = []
+    for day in days:
+        if day in day_map:
+            normalized_days.append(day_map[day])
+        else:
+            # Si no es una abreviación reconocida, intentar capitalizar
+            day_capitalized = day.capitalize()
+            if day_capitalized in day_map.values():
+                normalized_days.append(day_capitalized)
+    
+    return ','.join(normalized_days)
+
+def normalize_day_of_week_input(input_str: str) -> str:
+    """
+    Normaliza entrada de día de la semana individual.
+    
+    Args:
+        input_str: Día en formato abreviado o completo
+        
+    Returns:
+        str: Día normalizado en formato completo
+    """
+    day_map = {
+        'l': 'Lunes', 'lun': 'Lunes', 'lunes': 'Lunes',
+        'm': 'Martes', 'mar': 'Martes', 'martes': 'Martes', 
+        'x': 'Miércoles', 'mie': 'Miércoles', 'miércoles': 'Miércoles', 'miercoles': 'Miércoles',
+        'j': 'Jueves', 'jue': 'Jueves', 'jueves': 'Jueves',
+        'v': 'Viernes', 'vie': 'Viernes', 'viernes': 'Viernes',
+        's': 'Sábado', 'sab': 'Sábado', 'sábado': 'Sábado', 'sabado': 'Sábado',
+        'd': 'Domingo', 'dom': 'Domingo', 'domingo': 'Domingo'
+    }
+    
+    cleaned = input_str.lower().strip()
+    return day_map.get(cleaned, input_str.title())
 
 def parse_quality_session_preference(input_str: str) -> str:
     """
-    Normaliza preferencias de días para sesiones de calidad.
+    FUNCIÓN OBSOLETA - Mantenida temporalmente por compatibilidad hacia atrás.
     
-    Args:
-        input_str: Entrada con días separados por comas o espacios
-    
-    Returns:
-        str: Días normalizados separados por comas
-    
-    Examples:
-        >>> parse_quality_session_preference("mar, jue")
-        'Martes, Jueves'
+    DEPRECATION WARNING: Esta función será eliminada en versiones futuras.
     """
-    if not input_str or input_str.strip().lower() in ['ninguna', 'sin preferencia', 'no']:
-        return "Sin preferencia"
+    if not input_str:
+        return ""
     
-    # Dividir por comas, espacios o "y"
-    separators = [',', ' y ', ' e ', ';']
-    days_list = [input_str]
+    # Normalización básica
+    normalized = input_str.strip()
     
-    for sep in separators:
-        new_list = []
-        for item in days_list:
-            new_list.extend(item.split(sep))
-        days_list = new_list
-    
-    # Normalizar cada día
+    # Dividir por comas y limpiar cada día
+    days = [day.strip() for day in normalized.split(',')]
     normalized_days = []
-    for day in days_list:
-        normalized_day = normalize_day_of_week_input(day.strip())
-        if normalized_day and normalized_day not in normalized_days:
+    
+    for day in days:
+        normalized_day = normalize_day_of_week_input(day)
+        if normalized_day:
             normalized_days.append(normalized_day)
     
-    return ', '.join(normalized_days) if normalized_days else "Sin preferencia"
+    return ', '.join(normalized_days)
 
+def calculate_training_zones(max_hr: int, resting_hr: int) -> TrainingZones:
+    """
+    Calcula zonas de entrenamiento usando fórmula de Karvonen.
+    
+    La fórmula de Karvonen es considerada más precisa que el simple
+    porcentaje de FC máxima, ya que toma en cuenta la reserva cardíaca
+    individual del atleta.
+    
+    Args:
+        max_hr: Frecuencia cardíaca máxima
+        resting_hr: Frecuencia cardíaca en reposo
+    
+    Returns:
+        TrainingZones: Zonas calculadas con rangos específicos
+    
+    Examples:
+        >>> zones = calculate_training_zones(184, 41)
+        >>> zones.zone1_hr
+        '112-127 ppm'
+    """
+    hr_reserve = max_hr - resting_hr
+    
+    # Calcular límites de cada zona (% de reserva de FC)
+    def calculate_zone(low_percent: float, high_percent: float) -> str:
+        low_hr = int(resting_hr + (hr_reserve * low_percent))
+        high_hr = int(resting_hr + (hr_reserve * high_percent))
+        return f"{low_hr}-{high_hr} ppm"
+    
+    return TrainingZones(
+        zone1_hr=calculate_zone(0.50, 0.60),      # 50-60% reserva
+        zone2_hr=calculate_zone(0.60, 0.70),     # 60-70% reserva  
+        zone3_hr=calculate_zone(0.70, 0.80),     # 70-80% reserva
+        zone4_hr=calculate_zone(0.80, 0.90),     # 80-90% reserva
+        zone5_hr=calculate_zone(0.90, 1.00)      # 90-100% reserva
+    )
 
-def validate_heart_rates(max_hr: Optional[int], resting_hr: Optional[int]) -> List[str]:
+def validate_heart_rates(max_hr: int, resting_hr: int) -> List[str]:
     """
     Valida coherencia de frecuencias cardíacas.
     
     Args:
         max_hr: Frecuencia cardíaca máxima
         resting_hr: Frecuencia cardíaca en reposo
-    
+        
     Returns:
-        List[str]: Lista de errores encontrados
+        List[str]: Lista de errores de validación (vacía si válido)
     """
     errors = []
     
-    if max_hr is not None and resting_hr is not None:
-        if max_hr <= resting_hr:
-            errors.append("La FCmáx debe ser mayor que la FCrep")
-        
-        if max_hr - resting_hr < 20:
-            errors.append("La diferencia entre FCmáx y FCrep parece muy pequeña")
+    if max_hr <= resting_hr:
+        errors.append("FC máxima debe ser mayor que FC en reposo")
     
-    if max_hr is not None:
-        if max_hr < 120 or max_hr > 220:
-            errors.append("FCmáx fuera del rango típico (120-220 ppm)")
-    
-    if resting_hr is not None:
-        if resting_hr < 30 or resting_hr > 100:
-            errors.append("FCrep fuera del rango típico (30-100 ppm)")
+    if max_hr - resting_hr < 50:
+        errors.append("Diferencia entre FC máxima y reposo parece muy pequeña")
     
     return errors
 
-
-def validate_physical_metrics(age: Optional[int], weight: Optional[float], 
-                            height: Optional[int]) -> List[str]:
+def validate_physical_metrics(age: Optional[int], weight: Optional[float], height: Optional[int]) -> List[str]:
     """
     Valida coherencia de métricas físicas.
     
-    Args:
-        age: Edad en años
-        weight: Peso en kg
-        height: Altura en cm
-    
-    Returns:
-        List[str]: Lista de errores encontrados
+    Incluye cálculo de BMI y validación de rangos típicos para runners.
     """
     errors = []
     
-    if age is not None:
-        if age < 10 or age > 100:
-            errors.append("Edad fuera del rango válido (10-100 años)")
-    
-    if weight is not None:
-        if weight < 30 or weight > 200:
-            errors.append("Peso fuera del rango típico (30-200 kg)")
-    
-    if height is not None:
-        if height < 100 or height > 250:
-            errors.append("Altura fuera del rango típico (100-250 cm)")
-    
-    # Validar BMI si tenemos peso y altura
-    if weight is not None and height is not None:
-        height_m = height / 100.0
-        bmi = weight / (height_m ** 2)
-        
-        if bmi < 15 or bmi > 40:
-            errors.append(f"BMI calculado ({bmi:.1f}) fuera del rango típico para atletas")
+    if age and weight and height:
+        bmi = weight / ((height / 100) ** 2)
+        if bmi < 16 or bmi > 35:
+            errors.append(f"BMI calculado ({bmi:.1f}) fuera de rango típico para runners")
     
     return errors
 
-
-def calculate_training_zones(max_hr: int, resting_hr: int) -> TrainingZones:
+def validate_race_date(date_str: str, race_name: str) -> Tuple[bool, Optional[str]]:
     """
-    Calcula zonas de entrenamiento usando la Fórmula de Karvonen.
-    
-    La Fórmula de Karvonen: FC_objetivo = FCrep + (intensidad × (FCmáx - FCrep))
-    
-    Zonas estándar:
-    - Z1: 50-60% (Recuperación activa)
-    - Z2: 60-70% (Base aeróbica)
-    - Z3: 70-80% (Aeróbico)
-    - Z4: 80-90% (Umbral anaeróbico)
-    - Z5: 90-100% (VO2máx/Neuromuscular)
-    
-    Args:
-        max_hr: Frecuencia cardíaca máxima
-        resting_hr: Frecuencia cardíaca en reposo
+    Valida fecha de carrera y calcula tiempo hasta el evento.
     
     Returns:
-        TrainingZones: Objeto con las 5 zonas calculadas
-    """
-    hr_reserve = max_hr - resting_hr
-    
-    # Calcular límites de cada zona
-    zones = {
-        1: (0.50, 0.60),  # Z1: 50-60%
-        2: (0.60, 0.70),  # Z2: 60-70%
-        3: (0.70, 0.80),  # Z3: 70-80%
-        4: (0.80, 0.90),  # Z4: 80-90%
-        5: (0.90, 1.00),  # Z5: 90-100%
-    }
-    
-    calculated_zones = {}
-    
-    for zone_num, (min_intensity, max_intensity) in zones.items():
-        min_hr = round(resting_hr + (min_intensity * hr_reserve))
-        max_hr_zone = round(resting_hr + (max_intensity * hr_reserve))
-        calculated_zones[f'zone{zone_num}_hr'] = f"{min_hr}-{max_hr_zone}"
-    
-    return TrainingZones(
-        zone1_hr=calculated_zones['zone1_hr'],
-        zone2_hr=calculated_zones['zone2_hr'],
-        zone3_hr=calculated_zones['zone3_hr'],
-        zone4_hr=calculated_zones['zone4_hr'],
-        zone5_hr=calculated_zones['zone5_hr']
-    )
-
-
-def validate_race_date(date_str: str, race_name: str = "") -> Tuple[bool, str]:
-    """
-    Valida fecha de carrera y verifica que esté en el futuro.
-    
-    Args:
-        date_str: Fecha en formato YYYY-MM-DD
-        race_name: Nombre de la carrera (para mensajes de error)
-    
-    Returns:
-        Tuple[bool, str]: (es_válida, mensaje_error)
+        Tuple[bool, Optional[str]]: (fecha_válida, mensaje_warning)
     """
     try:
-        race_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+        race_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         today = date.today()
         
-        if race_date <= today:
-            return False, f"La fecha de {race_name or 'la carrera'} debe ser futura"
+        days_until_race = (race_date - today).days
         
-        # Advertir si es muy lejana (más de 2 años)
-        days_diff = (race_date - today).days
-        if days_diff > 730:
-            return True, f"Advertencia: {race_name or 'La carrera'} es en {days_diff} días"
-        
-        return True, ""
-        
+        if days_until_race < 0:
+            return False, f"La fecha de {race_name} ya ha pasado"
+        elif days_until_race < 30:
+            return True, f"⚠️ Solo {days_until_race} días hasta {race_name} - plan será muy breve"
+        elif days_until_race > 365:
+            return True, f"⚠️ Fecha muy lejana ({days_until_race} días) - considere objetivos intermedios"
+        else:
+            return True, None
+            
     except ValueError:
-        return False, "Formato de fecha inválido. Use YYYY-MM-DD"
+        return False, "Formato de fecha inválido (use YYYY-MM-DD)"
 
+def format_distance_for_display(distance_km: float) -> str:
+    """Formatea distancia para mostrar de forma amigable."""
+    if distance_km == 5.0:
+        return "5K"
+    elif distance_km == 10.0:
+        return "10K"
+    elif abs(distance_km - 21.097) < 0.1:
+        return "Media Maratón"
+    elif abs(distance_km - 42.195) < 0.1:
+        return "Maratón"
+    else:
+        return f"{distance_km}K"
+
+def suggest_training_weeks(race_date: str) -> int:
+    """
+    Sugiere duración óptima del plan basado en fecha de carrera.
+    
+    Args:
+        race_date: Fecha en formato YYYY-MM-DD
+        
+    Returns:
+        int: Semanas sugeridas para el plan
+    """
+    try:
+        target_date = datetime.strptime(race_date, '%Y-%m-%d').date()
+        today = date.today()
+        days_until = (target_date - today).days
+        weeks_until = days_until // 7
+        
+        # Sugerir duración basada en tiempo disponible
+        if weeks_until < 8:
+            return max(4, weeks_until - 1)  # Mínimo 4 semanas
+        elif weeks_until < 16:
+            return min(12, weeks_until - 1)  # Máximo 12 semanas para evitar sobreentrenamiento
+        else:
+            return 16  # Plan estándar largo
+            
+    except ValueError:
+        return 8  # Default seguro
+
+def estimate_vo2_max_from_time(distance_km: float, time_str: str, age: int, weight_kg: float) -> Optional[float]:
+    """
+    Estima VO2máx basado en tiempo de carrera usando fórmulas validadas.
+    
+    Utiliza las fórmulas de Mercier et al. ajustadas por edad para
+    proporcionar estimaciones razonablemente precisas de VO2máx.
+    
+    Args:
+        distance_km: Distancia de la carrera
+        time_str: Tiempo en formato HH:MM:SS
+        age: Edad del atleta
+        weight_kg: Peso del atleta
+        
+    Returns:
+        Optional[float]: VO2máx estimado o None si no se puede calcular
+    """
+    try:
+        # Convertir tiempo a segundos totales
+        time_parts = time_str.split(':')
+        if len(time_parts) == 3:
+            hours, minutes, seconds = map(int, time_parts)
+            total_seconds = hours * 3600 + minutes * 60 + seconds
+        else:
+            return None
+        
+        # Calcular velocidad en m/min
+        distance_m = distance_km * 1000
+        time_minutes = total_seconds / 60
+        speed_m_per_min = distance_m / time_minutes
+        
+        # Fórmulas específicas por distancia
+        if abs(distance_km - 10.0) < 0.1:  # 10K
+            # Fórmula de Mercier et al. para 10K
+            vo2_max = 15.0 * speed_m_per_min / 10.0
+        elif abs(distance_km - 21.097) < 0.1:  # Media Maratón  
+            # Fórmula ajustada para media maratón
+            vo2_max = 14.8 * speed_m_per_min / 10.0
+        else:
+            # Fórmula genérica
+            vo2_max = 15.0 * speed_m_per_min / 10.0
+        
+        # Ajustar por edad (declina ~1% por año después de los 25)
+        age_factor = 1.0 - max(0, (age - 25) * 0.01)
+        vo2_max_adjusted = vo2_max * age_factor
+        
+        # Validar rango razonable
+        if 30 <= vo2_max_adjusted <= 85:
+            return round(vo2_max_adjusted, 1)
+        else:
+            return None
+            
+    except (ValueError, ZeroDivisionError):
+        return None
 
 def calculate_bmi(weight_kg: float, height_cm: float) -> Optional[float]:
     """
@@ -402,7 +431,7 @@ def calculate_bmi(weight_kg: float, height_cm: float) -> Optional[float]:
     Args:
         weight_kg: Weight in kilograms
         height_cm: Height in centimeters
-    
+        
     Returns:
         Optional[float]: BMI value or None if invalid inputs
     """
@@ -412,122 +441,3 @@ def calculate_bmi(weight_kg: float, height_cm: float) -> Optional[float]:
     height_m = height_cm / 100
     bmi = weight_kg / (height_m ** 2)
     return round(bmi, 1)
-
-
-def estimate_vo2_max_from_time(distance_km: float, time_str: str, age: int, weight_kg: float) -> Optional[float]:
-    """
-    Estimate VO2 max from race performance using established formulas.
-    
-    Args:
-        distance_km: Race distance in kilometers
-        time_str: Race time in HH:MM:SS or MM:SS format
-        age: Athlete age
-        weight_kg: Athlete weight
-    
-    Returns:
-        Optional[float]: Estimated VO2 max in ml/kg/min or None if calculation impossible
-    """
-    try:
-        # Parse time to seconds
-        parts = time_str.split(':')
-        if len(parts) == 3:
-            hours, minutes, seconds = map(int, parts)
-            total_seconds = hours * 3600 + minutes * 60 + seconds
-        elif len(parts) == 2:
-            minutes, seconds = map(int, parts)
-            total_seconds = minutes * 60 + seconds
-        else:
-            return None
-        
-        # Calculate velocity in m/s
-        distance_m = distance_km * 1000
-        velocity_ms = distance_m / total_seconds
-        
-        # Use Jack Daniels' formula for VO2max estimation
-        # VO2max = velocity * (0.2 + 0.9 * velocity / pace) + 3.5
-        # Simplified approximation for different distances
-        if distance_km == 10.0:
-            # 10K formula approximation
-            pace_min_per_km = total_seconds / 60 / distance_km
-            vo2_estimate = 483 / pace_min_per_km
-        elif distance_km == 21.097:
-            # Half marathon formula approximation
-            pace_min_per_km = total_seconds / 60 / distance_km
-            vo2_estimate = 460 / pace_min_per_km
-        else:
-            return None
-        
-        # Apply age correction (approximate)
-        age_factor = 1.0 - (max(0, age - 25) * 0.01)
-        vo2_estimate *= age_factor
-        
-        return round(max(25.0, min(85.0, vo2_estimate)), 1)
-        
-    except:
-        return None
-
-def format_distance_for_display(distance_km: float) -> str:
-    """
-    Formatea distancia para mostrar de forma amigable.
-    
-    Args:
-        distance_km: Distancia en kilómetros
-    
-    Returns:
-        str: Distancia formateada (ej: "5K", "Media Maratón", "Maratón")
-    """
-    distance_names = {
-        5.0: "5K",
-        10.0: "10K", 
-        15.0: "15K",
-        21.097: "Media Maratón",
-        21.1: "Media Maratón",
-        42.195: "Maratón",
-        42.2: "Maratón"
-    }
-    
-    # Buscar coincidencia exacta o aproximada
-    for dist, name in distance_names.items():
-        if abs(distance_km - dist) < 0.1:
-            return name
-    
-    # Si no hay coincidencia, mostrar km
-    if distance_km == int(distance_km):
-        return f"{int(distance_km)}K"
-    else:
-        return f"{distance_km:.1f}K"
-
-
-def suggest_training_weeks(race_date: str) -> Optional[int]:
-    """
-    Suggest optimal training plan duration based on race date.
-    
-    Args:
-        race_date: Race date in YYYY-MM-DD format
-    
-    Returns:
-        Optional[int]: Suggested number of weeks or None if invalid date
-    """
-    try:
-        from datetime import datetime
-        race_dt = datetime.strptime(race_date, "%Y-%m-%d")
-        now = datetime.now()
-        
-        if race_dt <= now:
-            return None
-        
-        days_until = (race_dt - now).days
-        weeks_until = days_until // 7
-        
-        # Suggest appropriate duration
-        if weeks_until < 6:
-            return weeks_until
-        elif weeks_until < 12:
-            return 8
-        elif weeks_until < 20:
-            return 12
-        else:
-            return 16
-            
-    except:
-        return None

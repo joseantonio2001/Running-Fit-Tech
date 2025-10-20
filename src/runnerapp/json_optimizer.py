@@ -1,9 +1,18 @@
 """
-JSON AI Optimization Module - MAXIMALLY UNBIASED VERSION
+JSON AI Optimization Module - ACTUALIZADO SIN EXPERIENCE_NOTES
+
+✅ ELIMINADO: Campo "experience_notes" que podría sesgar razonamiento de IA
+✅ AÑADIDOS: Nuevos campos técnicos para mejor contexto de IA
+- running_experience_years: Experiencia deportiva total
+- current_training_period: Período de entrenamiento actual
+
+✅ MANTENIDO: Campo "include_strength_training" en JSON (eliminado solo del PDF)
+✅ CORREGIDO: Sin importación circular
+✅ LIMPIO: Sin análisis de coherencia en JSON (se fuerza en CLI)
 
 This module specializes in transforming the AthleteProfile data model
 into an AI-optimized JSON structure without ANY conditioning of AI reasoning.
-The output provides pure raw data and minimal descriptive analysis to allow 
+The output provides pure raw data and minimal descriptive analysis to allow
 AI systems complete autonomy in generating training recommendations.
 
 Key optimizations:
@@ -35,6 +44,7 @@ def optimize_profile_for_ai(profile: AthleteProfile) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: AI-optimized data structure (maximally unbiased)
     """
+    
     # Calculate derived metrics
     bmi = None
     if profile.weight_kg and profile.height_cm:
@@ -61,17 +71,17 @@ def optimize_profile_for_ai(profile: AthleteProfile) -> Dict[str, Any]:
         },
         
         "physiological_metrics": _build_physiological_section(profile),
-        "training_context": _build_training_context_section(profile),
+        "training_context": _build_training_context_section_with_new_fields(profile),
         "performance_data": _build_performance_section(profile),
         "race_goals": _build_race_goals_section(profile),
         "injury_history": _build_injury_history_section(profile)
-        # ❌ ELIMINADO: ai_guidance (sección completa)
     }
     
     return ai_data
 
 def _build_physiological_section(profile: AthleteProfile) -> Dict[str, Any]:
     """Build physiological metrics section for AI (unbiased version)."""
+    
     section = {
         "meta_description": "Métricas fisiológicas clave que definen el perfil de resistencia y el potencial aeróbico del atleta. Estos datos son fundamentales para establecer zonas de entrenamiento precisas y adaptar la intensidad del plan.",
         "max_hr": profile.max_hr,
@@ -94,7 +104,7 @@ def _build_physiological_section(profile: AthleteProfile) -> Dict[str, Any]:
                     "purpose": "Regeneración y volumen base sin estrés metabólico"
                 },
                 "zone2_aerobic": {
-                    "name": "Aeróbico Ligero", 
+                    "name": "Aeróbico Ligero",
                     "hr_range": profile.training_zones.zone2_hr,
                     "intensity": "60-70% FC Reserva",
                     "purpose": "Base aeróbica y resistencia fundamental"
@@ -114,7 +124,7 @@ def _build_physiological_section(profile: AthleteProfile) -> Dict[str, Any]:
                 "zone5_vo2max": {
                     "name": "Potencia Máxima",
                     "hr_range": profile.training_zones.zone5_hr,
-                    "intensity": "90-100% FC Reserva", 
+                    "intensity": "90-100% FC Reserva",
                     "purpose": "Capacidad anaeróbica y velocidad máxima"
                 }
             }
@@ -122,44 +132,64 @@ def _build_physiological_section(profile: AthleteProfile) -> Dict[str, Any]:
     
     return section
 
-def _build_training_context_section(profile: AthleteProfile) -> Dict[str, Any]:
-    """Build training context section for AI (unbiased version)."""
+def _build_training_context_section_with_new_fields(profile: AthleteProfile) -> Dict[str, Any]:
+    """
+    ✅ Build training context section CON NUEVOS CAMPOS TÉCNICOS - SIN EXPERIENCE_NOTES.
+    
+    Incluye los nuevos campos técnicos y mantiene "include_strength_training"
+    (solo se eliminó del PDF, no del JSON).
+    
+    ❌ ELIMINADO: "experience_notes" que podría sesgar el razonamiento de la IA.
+    """
+    
     return {
-        "meta_description": "Contexto actual de entrenamiento del atleta, incluyendo carga de trabajo, disponibilidad temporal y preferencias específicas. Esta información es crucial para adaptar el volumen, frecuencia y distribución de entrenamientos.",
+        "meta_description": "Contexto actual de entrenamiento del atleta, incluyendo experiencia deportiva, carga de trabajo, disponibilidad temporal y restricciones de horario. Esta información es crucial para adaptar el volumen, frecuencia y distribución de entrenamientos.",
+        
         "current_training_load": {
             "avg_weekly_km": profile.avg_weekly_km,
             "training_days_per_week": profile.training_days_per_week
         },
+        
+        # ✅ NUEVOS CAMPOS TÉCNICOS (sin experience_notes)
+        "experience_and_background": {
+            "running_experience_years": profile.running_experience_years,
+            "current_training_period": profile.current_training_period
+            # ❌ ELIMINADO: "experience_notes": _generate_experience_notes(profile)
+        },
+        
+        "availability_constraints": {
+            "available_training_days": profile.available_training_days,
+            "unavailable_days": profile.unavailable_days
+        },
+        
         "strength_training": {
             "history": profile.strength_training_history,
-            "include_in_plan": profile.include_strength_training,
-            "integration_notes": _generate_optimal_strength_notes(profile)
-        },
-        "scheduling_preferences": {
-            "quality_session_preference": profile.quality_session_preference
+            "include_in_plan": profile.include_strength_training,  # ✅ MANTENIDO en JSON
+            "integration_notes": _generate_strength_integration_notes(profile)
         }
     }
 
-def _generate_optimal_strength_notes(profile: AthleteProfile) -> str:
-    """Generate strength training integration notes (ONLY optimal descriptive values)."""
+def _generate_strength_integration_notes(profile: AthleteProfile) -> str:
+    """Generate strength training integration notes."""
+    
     if profile.strength_training_history is None:
         return "Historial de fuerza no especificado"
     
     if profile.include_strength_training is None:
         return "Preferencia de inclusión no especificada"
     
-    # SOLO valores descriptivos óptimos
     if profile.strength_training_history and profile.include_strength_training:
-        return "Atleta experimentado - integración avanzada"
+        return "Atleta experimentado - integración avanzada recomendada"
     elif not profile.strength_training_history and profile.include_strength_training:
-        return "Principiante en fuerza - integración inicial"
+        return "Principiante en fuerza - integración gradual recomendada"
     elif profile.strength_training_history and not profile.include_strength_training:
-        return "Experiencia previa pero no desea incluir - trabajo mínimo"
+        return "Experiencia previa pero no desea incluir - mantener mínimo"
     else:
-        return "Sin fuerza - enfoque aeróbico completo"
+        return "Sin fuerza - enfoque aeróbico exclusivo"
 
 def _build_performance_section(profile: AthleteProfile) -> Dict[str, Any]:
     """Build performance data section for AI (unbiased version)."""
+    
     section = {
         "meta_description": "Datos de rendimiento actuales del atleta incluyendo marcas personales y análisis de nivel competitivo. Estos datos permiten establecer objetivos realistas y calibrar la intensidad del entrenamiento.",
         "personal_bests": {},
@@ -179,6 +209,7 @@ def _build_performance_section(profile: AthleteProfile) -> Dict[str, Any]:
             if profile.personal_bests.get(key):
                 time = profile.personal_bests[key]
                 pace = _calculate_pace_from_time(time, info["distance_km"])
+                
                 section["personal_bests"][key] = {
                     "distance_name": info["name"],
                     "distance_km": info["distance_km"],
@@ -187,13 +218,13 @@ def _build_performance_section(profile: AthleteProfile) -> Dict[str, Any]:
                     "performance_level": _assess_performance_level(key, time, profile.age, profile.gender)
                 }
         
-        # Overall performance analysis (WITHOUT training focus recommendations)
         section["performance_analysis"] = _analyze_overall_performance_unbiased(profile)
     
     return section
 
 def _build_race_goals_section(profile: AthleteProfile) -> Dict[str, Any]:
     """Build race goals section for AI."""
+    
     section = {
         "meta_description": "Objetivos de carrera del atleta incluyendo objetivo principal y carreras intermedias. Esta sección define el enfoque y la periodización del plan de entrenamiento.",
         "main_objective": None,
@@ -226,10 +257,12 @@ def _build_race_goals_section(profile: AthleteProfile) -> Dict[str, Any]:
             })
     
     section["goal_analysis"] = _analyze_goal_structure(profile)
+    
     return section
 
 def _build_injury_history_section(profile: AthleteProfile) -> Dict[str, Any]:
     """Build injury history section for AI (unbiased version)."""
+    
     section = {
         "meta_description": "Historial de lesiones para identificar patrones de riesgo, debilidades estructurales y adaptar el entrenamiento de fuerza y las progresiones de carga.",
         "injuries": [],
@@ -254,6 +287,7 @@ def _build_injury_history_section(profile: AthleteProfile) -> Dict[str, Any]:
 
 def _calculate_profile_completeness(profile: AthleteProfile) -> Dict[str, Any]:
     """Calculate profile completeness metrics."""
+    
     total_fields = 0
     completed_fields = 0
     
@@ -261,7 +295,7 @@ def _calculate_profile_completeness(profile: AthleteProfile) -> Dict[str, Any]:
     core_fields = [
         profile.name, profile.age, profile.gender,
         profile.max_hr, profile.resting_hr,
-        profile.avg_weekly_km, profile.training_days_per_week,
+        profile.avg_weekly_km, profile.available_training_days,
         profile.main_objective
     ]
     
@@ -270,12 +304,23 @@ def _calculate_profile_completeness(profile: AthleteProfile) -> Dict[str, Any]:
         if field:
             completed_fields += 2
     
+    # ✅ NUEVOS CAMPOS TÉCNICOS en completitud
+    new_technical_fields = [
+        profile.running_experience_years,
+        profile.current_training_period,
+    ]
+    
+    for field in new_technical_fields:
+        total_fields += 1
+        if field:
+            completed_fields += 1
+    
     # Optional fields
     optional_fields = [
         profile.height_cm, profile.weight_kg, profile.vo2_max,
         profile.lactate_threshold_bpm, profile.hrv_ms,
         profile.strength_training_history, profile.include_strength_training,
-        profile.quality_session_preference
+        profile.unavailable_days
     ]
     
     for field in optional_fields:
@@ -291,7 +336,7 @@ def _calculate_profile_completeness(profile: AthleteProfile) -> Dict[str, Any]:
     if profile.intermediate_races:
         completed_fields += 1
         total_fields += 1
-        
+    
     if profile.injuries:
         completed_fields += 1
         total_fields += 1
@@ -307,6 +352,7 @@ def _calculate_profile_completeness(profile: AthleteProfile) -> Dict[str, Any]:
 
 def _analyze_overall_performance_unbiased(profile: AthleteProfile) -> Dict[str, Any]:
     """Analyze overall performance level and potential (WITHOUT training focus recommendations)."""
+    
     if not profile.personal_bests:
         return {"level": "No evaluado", "notes": "Sin datos de rendimiento disponibles"}
     
@@ -322,7 +368,6 @@ def _analyze_overall_performance_unbiased(profile: AthleteProfile) -> Dict[str, 
         "race_experience_breadth": f"{race_experience}/4 distancias registradas",
         "specialization_tendency": _identify_specialization(profile.personal_bests),
         "improvement_potential": _assess_improvement_potential(profile)
-        # ❌ ELIMINADO: training_focus_recommendation
     }
     
     return analysis

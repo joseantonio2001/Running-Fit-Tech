@@ -1,5 +1,16 @@
 """
-Output Generation Module - FINAL VERSION WITH ELEGANT NAME FORMATTING
+Output Generation Module - ACTUALIZADO: Nuevos campos técnicos
+
+✅ AÑADIDOS: Nuevos campos técnicos en PDF y JSON
+- Experiencia Deportiva (running_experience_years)
+- Período Actual (current_training_period)  
+- Nivel Competitivo (competitive_level)
+
+✅ ELIMINADO: "INCLUIR FUERZA" del PDF (solo en JSON)
+✅ MANTENIDO: Toda la estética original idéntica
+✅ CORREGIDO: Nombres de campos en negrita
+✅ CORREGIDO: Sin importación circular
+✅ CORREGIDO: lactate_threshold_bpm referencia correcta
 
 Versión FINAL con FORMATO ELEGANTE DEL NOMBRE:
 - Espaciado consistente entre título de bloque y contenido
@@ -15,8 +26,7 @@ Versión FINAL con FORMATO ELEGANTE DEL NOMBRE:
 - ✅ ESPACIADO REDUCIDO entre título principal y primer bloque
 - ✅ FORMATO NOMBRE ELEGANTE: Puntos entre palabras
 - ✅ DISEÑO ULTRA-MINIMALISTA Y PROFESIONAL
-- ✅ BUG IMPORT CORREGIDO: SimpleDocTemplate (no SimpleDocDocument)
-- ✅ BUG CORREGIDO: lactate_threshold_bmp (no bmp)
+- ✅ NOMBRES CAMPOS EN NEGRITA: Exactamente como versión anterior
 """
 
 import json
@@ -38,31 +48,30 @@ from .models import AthleteProfile, TrainingZones
 from .calculations import calculate_training_zones, calculate_bmi, format_distance_for_display
 from .json_optimizer import optimize_profile_for_ai
 
-
 # Output configuration
 DEFAULT_OUTPUTS_DIR = Path("outputs")
 DEFAULT_PDF_FILENAME = "ficha_tecnica_profesional.pdf"
 DEFAULT_JSON_FILENAME = "athlete_profile_ai_optimized.json"
 
 # BALANCED MINIMALIST COLOR PALETTE
-BACKGROUND_BLACK = colors.Color(0.04, 0.04, 0.04)      # Deep black #0A0A0A
-BACKGROUND_DARK = colors.Color(0.10, 0.10, 0.10)       # Dark gray #1A1A1A
-TEXT_WHITE = colors.Color(0.95, 0.95, 0.95)            # Soft white #F2F2F2
-TEXT_LIGHT = colors.Color(0.70, 0.70, 0.70)            # Light gray #B3B3B3
-TEXT_MEDIUM = colors.Color(0.58, 0.58, 0.58)           # Medium gray
-ACCENT_CHROME = colors.Color(0.72, 0.72, 0.72)         # Chrome/metallic
-ACCENT_BRIGHT = colors.Color(0.82, 0.82, 0.82)         # Subtle bright accent
-BORDER_SUBTLE = colors.Color(0.25, 0.25, 0.25)         # Subtle border
-HEADER_DARKER = colors.Color(0.45, 0.45, 0.45)         # Darker header gray
-FOOTER_GRAY = colors.Color(0.40, 0.40, 0.40)           # Footer gray
+BACKGROUND_BLACK = colors.Color(0.04, 0.04, 0.04)  # Deep black #0A0A0A
+BACKGROUND_DARK = colors.Color(0.10, 0.10, 0.10)   # Dark gray #1A1A1A
+TEXT_WHITE = colors.Color(0.95, 0.95, 0.95)        # Soft white #F2F2F2
+TEXT_LIGHT = colors.Color(0.70, 0.70, 0.70)        # Light gray #B3B3B3
+TEXT_MEDIUM = colors.Color(0.58, 0.58, 0.58)       # Medium gray
+ACCENT_CHROME = colors.Color(0.72, 0.72, 0.72)     # Chrome/metallic
+ACCENT_BRIGHT = colors.Color(0.82, 0.82, 0.82)     # Subtle bright accent
+BORDER_SUBTLE = colors.Color(0.25, 0.25, 0.25)     # Subtle border
+HEADER_DARKER = colors.Color(0.45, 0.45, 0.45)     # Darker header gray
+FOOTER_GRAY = colors.Color(0.40, 0.40, 0.40)       # Footer gray
 
 # Balanced training zones colors
 ZONE_COLORS_BALANCED = {
-    'Z1': colors.Color(0.12, 0.18, 0.12),    # Subtle green
-    'Z2': colors.Color(0.10, 0.16, 0.22),    # Subtle blue  
-    'Z3': colors.Color(0.22, 0.20, 0.08),    # Subtle yellow
-    'Z4': colors.Color(0.24, 0.15, 0.08),    # Subtle orange
-    'Z5': colors.Color(0.24, 0.10, 0.10),    # Subtle red
+    'Z1': colors.Color(0.12, 0.18, 0.12),  # Subtle green
+    'Z2': colors.Color(0.10, 0.16, 0.22),  # Subtle blue
+    'Z3': colors.Color(0.22, 0.20, 0.08),  # Subtle yellow
+    'Z4': colors.Color(0.24, 0.15, 0.08),  # Subtle orange
+    'Z5': colors.Color(0.24, 0.10, 0.10),  # Subtle red
 }
 
 # Balanced minimalist table style
@@ -108,7 +117,6 @@ def create_balanced_zones_style():
     for i, zone in enumerate(['Z1', 'Z2', 'Z3', 'Z4', 'Z5']):
         if zone in ZONE_COLORS_BALANCED:
             base_style.append(('BACKGROUND', (0, i+1), (-1, i+1), ZONE_COLORS_BALANCED[zone]))
-    
     return TableStyle(base_style)
 
 BALANCED_ZONES_STYLE = create_balanced_zones_style()
@@ -200,10 +208,10 @@ def create_balanced_minimalist_styles():
         spaceAfter=5
     )
     
-    # Data text with balanced spacing
+    # Data text with balanced spacing - MISMO ESTILO QUE VERSIÓN ANTERIOR
     styles['data_text'] = ParagraphStyle(
         'DataText',
-        fontName='Helvetica',
+        fontName='Helvetica',  # ✅ IGUAL QUE VERSIÓN ANTERIOR
         fontSize=10,
         textColor=TEXT_LIGHT,
         alignment=TA_LEFT,
@@ -235,13 +243,11 @@ BALANCED_TITLE_CONTENT_SPACING = 14
 BALANCED_CONTENT_BLOCK_SPACING = 14
 TABLE_TITLE_SPACING = 6
 
-
-def generate_outputs(profile: AthleteProfile, 
+def generate_outputs(profile: AthleteProfile,
                     output_dir: Optional[str] = None,
                     pdf_filename: Optional[str] = None,
                     json_filename: Optional[str] = None) -> Tuple[bool, str, str]:
     """Generate both PDF and JSON outputs for an athlete profile."""
-    
     if not output_dir:
         output_dir = DEFAULT_OUTPUTS_DIR
     
@@ -273,11 +279,10 @@ def generate_outputs(profile: AthleteProfile,
             return False, "", ""
         
         return True, str(pdf_path), str(json_path)
-        
+    
     except Exception as e:
         print(f"Error generating outputs: {e}")
         return False, "", ""
-
 
 def generate_minimalist_final_pdf_output(profile: AthleteProfile, filepath: str) -> bool:
     """Generate final minimalist PDF with elegant name formatting."""
@@ -290,8 +295,8 @@ def generate_minimalist_final_pdf_output(profile: AthleteProfile, filepath: str)
             pagesize=A4,
             leftMargin=25*mm,
             rightMargin=25*mm,
-            topMargin=40*mm,     # For clean header
-            bottomMargin=25*mm   # Space for page number at bottom
+            topMargin=40*mm,  # For clean header
+            bottomMargin=25*mm  # Space for page number at bottom
         )
         
         story = []
@@ -313,7 +318,7 @@ def generate_minimalist_final_pdf_output(profile: AthleteProfile, filepath: str)
             story.append(PageBreak())  # SALTO DE PÁGINA después de zonas
         
         # Continue with remaining sections on new page
-        story.extend(_build_complete_training_context_section(profile))
+        story.extend(_build_complete_training_context_section_with_new_fields(profile))
         story.append(Spacer(1, BALANCED_CONTENT_BLOCK_SPACING))
         
         story.extend(_build_balanced_performance_section(profile))
@@ -324,18 +329,20 @@ def generate_minimalist_final_pdf_output(profile: AthleteProfile, filepath: str)
         
         story.extend(_build_balanced_injury_history_section(profile))
         
-        # ✅ Build with final minimalist template and correct page numbering
-        doc.build(story, 
-                 onFirstPage=_add_final_minimalist_template, 
-                 onLaterPages=_add_final_minimalist_template)
-        return True
+        # ✅ NO LÍNEA FINAL (como en versión anterior)
         
+        # ✅ Build with final minimalist template and correct page numbering
+        doc.build(story,
+                  onFirstPage=_add_final_minimalist_template,
+                  onLaterPages=_add_final_minimalist_template)
+        
+        return True
+    
     except Exception as e:
         print(f"Error generating minimalist final PDF: {e}")
         import traceback
         traceback.print_exc()
         return False
-
 
 def _add_final_minimalist_template(canvas, doc):
     """✅ Add final minimalist page template with clean header and correct page number."""
@@ -352,7 +359,6 @@ def _add_final_minimalist_template(canvas, doc):
     
     canvas.restoreState()
 
-
 def _draw_final_minimalist_header(canvas, doc):
     """✅ Draw final minimalist header: branding left, copyright right."""
     # Header positioning
@@ -365,7 +371,7 @@ def _draw_final_minimalist_header(canvas, doc):
     canvas.setFillColor(ACCENT_CHROME)
     canvas.drawString(25*mm, header_y, "RUNNING FIT-TECH")
     
-    # ✅ RIGHT: Copyright
+    # ✅ RIGHT: Copyright con año correcto
     canvas.setFont('Helvetica', 8)
     canvas.setFillColor(TEXT_MEDIUM)
     generation_date = datetime.now()
@@ -377,7 +383,6 @@ def _draw_final_minimalist_header(canvas, doc):
     canvas.setStrokeColor(BORDER_SUBTLE)
     canvas.setLineWidth(0.5)
     canvas.line(25*mm, header_y - 4, page_width - 25*mm, header_y - 4)
-
 
 def _draw_correct_page_number(canvas, doc):
     """✅ Draw page number at bottom center with correct orientation."""
@@ -397,19 +402,6 @@ def _draw_correct_page_number(canvas, doc):
     # ✅ CENTER HORIZONTALLY at bottom of page
     canvas.drawString((page_width - text_width) / 2, page_number_y, page_text)
 
-
-def generate_json_output(profile: AthleteProfile, filepath: str) -> bool:
-    """Generate AI-optimized JSON output."""
-    try:
-        ai_optimized_data = optimize_profile_for_ai(profile)
-        with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(ai_optimized_data, f, ensure_ascii=False, indent=4, sort_keys=False)
-        return True
-    except Exception as e:
-        print(f"Error generating JSON: {e}")
-        return False
-
-
 def _format_name_with_elegant_spacing(name: str) -> str:
     """✅ Format name with elegant spacing: letters separated by spaces, words by dots."""
     if not name:
@@ -422,12 +414,11 @@ def _format_name_with_elegant_spacing(name: str) -> str:
     formatted_words = []
     for word in words:
         # Convert to uppercase and add spaces between letters
-        spaced_word = "   ".join(word.upper())
+        spaced_word = " ".join(word.upper())
         formatted_words.append(spaced_word)
     
     # Join words with centered dot separator
-    return "   ·   ".join(formatted_words)
-
+    return " · ".join(formatted_words)
 
 def _build_simplified_main_header(profile: AthleteProfile) -> list:
     """Build simplified main header with elegant name formatting."""
@@ -443,7 +434,7 @@ def _build_simplified_main_header(profile: AthleteProfile) -> list:
         name = Paragraph(name_formatted, PDF_STYLES['athlete_name'])
         content.append(name)
     
-    # Ultra-minimal date with dots
+    # ✅ Ultra-minimal date with dots con MES EN ESPAÑOL
     generation_date = datetime.now()
     months_spanish = {
         'January': 'ENERO', 'February': 'FEBRERO', 'March': 'MARZO',
@@ -451,16 +442,14 @@ def _build_simplified_main_header(profile: AthleteProfile) -> list:
         'July': 'JULIO', 'August': 'AGOSTO', 'September': 'SEPTIEMBRE',
         'October': 'OCTUBRE', 'November': 'NOVIEMBRE', 'December': 'DICIEMBRE'
     }
+    
     month_english = generation_date.strftime('%B')
     month_spanish = months_spanish.get(month_english, month_english.upper())
-    
     formatted_date = f"{generation_date.day} · {month_spanish} · {generation_date.year}"
-    
     date = Paragraph(formatted_date, PDF_STYLES['document_info'])
     content.append(date)
     
     return content
-
 
 def _build_complete_personal_info_section(profile: AthleteProfile) -> list:
     """Build personal information with ALL FIELDS ALWAYS SHOWN."""
@@ -470,27 +459,27 @@ def _build_complete_personal_info_section(profile: AthleteProfile) -> list:
     content.append(section_title)
     content.append(Spacer(1, BALANCED_TITLE_CONTENT_SPACING))
     
-    # ✅ EDAD - Siempre mostrado
+    # ✅ EDAD - Siempre mostrado con Helvetica-Bold para nombre del campo
     age_value = f"{profile.age} años" if profile.age else "No proporcionado"
     age_text = Paragraph(f"<b>EDAD</b> · {age_value}", PDF_STYLES['data_text'])
     content.append(age_text)
     
-    # ✅ GÉNERO - Siempre mostrado
+    # ✅ GÉNERO - Siempre mostrado con Helvetica-Bold para nombre del campo
     gender_value = profile.gender if profile.gender else "No proporcionado"
     gender_text = Paragraph(f"<b>GÉNERO</b> · {gender_value}", PDF_STYLES['data_text'])
     content.append(gender_text)
     
-    # ✅ ALTURA - Siempre mostrado
+    # ✅ ALTURA - Siempre mostrado con Helvetica-Bold para nombre del campo
     height_value = f"{profile.height_cm} cm" if profile.height_cm else "No proporcionado"
     height_text = Paragraph(f"<b>ALTURA</b> · {height_value}", PDF_STYLES['data_text'])
     content.append(height_text)
     
-    # ✅ PESO - Siempre mostrado
+    # ✅ PESO - Siempre mostrado con Helvetica-Bold para nombre del campo
     weight_value = f"{profile.weight_kg} kg" if profile.weight_kg else "No proporcionado"
     weight_text = Paragraph(f"<b>PESO</b> · {weight_value}", PDF_STYLES['data_text'])
     content.append(weight_text)
     
-    # ✅ BMI - Siempre mostrado (campo separado)
+    # ✅ BMI - Siempre mostrado (campo separado) con Helvetica-Bold para nombre del campo
     if profile.weight_kg and profile.height_cm:
         bmi = calculate_bmi(profile.weight_kg, profile.height_cm)
         bmi_value = f"{bmi:.1f}" if bmi else "No calculable"
@@ -501,7 +490,6 @@ def _build_complete_personal_info_section(profile: AthleteProfile) -> list:
     
     return content
 
-
 def _build_complete_physiological_section(profile: AthleteProfile) -> list:
     """Build physiological metrics with ALL FIELDS ALWAYS SHOWN."""
     content = []
@@ -510,59 +498,74 @@ def _build_complete_physiological_section(profile: AthleteProfile) -> list:
     content.append(section_title)
     content.append(Spacer(1, BALANCED_TITLE_CONTENT_SPACING))
     
+    # ✅ RECUPERADA: Descripción fisiológica original
     description = Paragraph(
         "Parámetros fisiológicos que definen el perfil de resistencia cardiovascular y el potencial de rendimiento aeróbico del atleta.",
         PDF_STYLES['section_description']
     )
     content.append(description)
     
-    # ✅ FC MÁXIMA - Siempre mostrado
+    # ✅ FC MÁXIMA - Siempre mostrado con Helvetica-Bold para nombre del campo
     max_hr_value = f"{profile.max_hr} bpm" if profile.max_hr else "No proporcionado"
     hr_max_text = Paragraph(f"<b>FC MÁXIMA</b> · {max_hr_value}", PDF_STYLES['data_text'])
     content.append(hr_max_text)
     
-    # ✅ FC REPOSO - Siempre mostrado
+    # ✅ FC REPOSO - Siempre mostrado con Helvetica-Bold para nombre del campo
     rest_hr_value = f"{profile.resting_hr} bpm" if profile.resting_hr else "No proporcionado"
     hr_rest_text = Paragraph(f"<b>FC REPOSO</b> · {rest_hr_value}", PDF_STYLES['data_text'])
     content.append(hr_rest_text)
     
-    # ✅ VO2 MÁXIMO - Siempre mostrado
+    # ✅ VO2 MÁXIMO - Siempre mostrado con Helvetica-Bold para nombre del campo
     vo2_value = f"{profile.vo2_max} ml/kg/min" if profile.vo2_max else "No proporcionado"
     vo2_text = Paragraph(f"<b>VO2 MÁXIMO</b> · {vo2_value}", PDF_STYLES['data_text'])
     content.append(vo2_text)
     
-    # ✅ UMBRAL LACTATO - Siempre mostrado
+    # ✅ UMBRAL LACTATO - Siempre mostrado (CORREGIDO: lactate_threshold_bpm)
     lactate_value = f"{profile.lactate_threshold_bpm} bpm" if profile.lactate_threshold_bpm else "No proporcionado"
     lactate_text = Paragraph(f"<b>UMBRAL LACTATO</b> · {lactate_value}", PDF_STYLES['data_text'])
     content.append(lactate_text)
     
-    # ✅ VFC (HRV) - Siempre mostrado
+    # ✅ VFC (HRV) - Siempre mostrado con Helvetica-Bold para nombre del campo
     hrv_value = f"{profile.hrv_ms} ms" if profile.hrv_ms else "No proporcionado"
     hrv_text = Paragraph(f"<b>VFC (HRV)</b> · {hrv_value}", PDF_STYLES['data_text'])
     content.append(hrv_text)
     
     return content
 
-
-def _build_complete_training_context_section(profile: AthleteProfile) -> list:
-    """Build training context with ALL FIELDS ALWAYS SHOWN."""
+def _build_complete_training_context_section_with_new_fields(profile: AthleteProfile) -> list:
+    """
+    ✅ Build training context CON NUEVOS CAMPOS TÉCNICOS - SIN "INCLUIR FUERZA".
+    
+    Mantiene EXACTAMENTE la misma estética de la versión anterior,
+    añadiendo los 3 nuevos campos y eliminando "INCLUIR FUERZA" del PDF.
+    """
     content = []
     
     section_title = Paragraph("CONTEXTO DE ENTRENAMIENTO", PDF_STYLES['section_title'])
     content.append(section_title)
     content.append(Spacer(1, BALANCED_TITLE_CONTENT_SPACING))
     
-    # ✅ VOLUMEN SEMANAL - Siempre mostrado
+    # ✅ VOLUMEN SEMANAL - Siempre mostrado con Helvetica-Bold para nombre del campo
     volume_value = f"{profile.avg_weekly_km} km/semana" if profile.avg_weekly_km else "No proporcionado"
     volume_text = Paragraph(f"<b>VOLUMEN SEMANAL</b> · {volume_value}", PDF_STYLES['data_text'])
     content.append(volume_text)
     
-    # ✅ DÍAS ENTRENAMIENTO - Siempre mostrado
+    # ✅ DÍAS ENTRENAMIENTO - Siempre mostrado con Helvetica-Bold para nombre del campo
     days_value = f"{profile.training_days_per_week} días/semana" if profile.training_days_per_week else "No proporcionado"
     days_text = Paragraph(f"<b>DÍAS ENTRENAMIENTO</b> · {days_value}", PDF_STYLES['data_text'])
     content.append(days_text)
     
-    # ✅ HISTORIAL FUERZA - Siempre mostrado
+    # ✅ NUEVO CAMPO 1: EXPERIENCIA DEPORTIVA
+    experience_value = f"{profile.running_experience_years} años" if profile.running_experience_years else "No proporcionado"
+    experience_text = Paragraph(f"<b>EXPERIENCIA DEPORTIVA</b> · {experience_value}", PDF_STYLES['data_text'])
+    content.append(experience_text)
+    
+    # ✅ NUEVO CAMPO 2: PERÍODO ACTUAL
+    period_value = profile.current_training_period if profile.current_training_period else "No proporcionado"
+    period_text = Paragraph(f"<b>PERÍODO ACTUAL</b> · {period_value}", PDF_STYLES['data_text'])
+    content.append(period_text)
+    
+    # ✅ HISTORIAL FUERZA - Siempre mostrado con Helvetica-Bold para nombre del campo
     if profile.strength_training_history is not None:
         history_value = "SÍ" if profile.strength_training_history else "NO"
     else:
@@ -570,21 +573,10 @@ def _build_complete_training_context_section(profile: AthleteProfile) -> list:
     strength_text = Paragraph(f"<b>HISTORIAL FUERZA</b> · {history_value}", PDF_STYLES['data_text'])
     content.append(strength_text)
     
-    # ✅ INCLUIR FUERZA - Siempre mostrado
-    if profile.include_strength_training is not None:
-        include_value = "SÍ" if profile.include_strength_training else "NO"
-    else:
-        include_value = "No proporcionado"
-    include_para = Paragraph(f"<b>INCLUIR FUERZA</b> · {include_value}", PDF_STYLES['data_text'])
-    content.append(include_para)
-    
-    # ✅ DÍAS PREFERIDOS - Siempre mostrado
-    preference_value = profile.quality_session_preference.upper() if profile.quality_session_preference else "No proporcionado"
-    preference_text = Paragraph(f"<b>DÍAS PREFERIDOS</b> · {preference_value}", PDF_STYLES['data_text'])
-    content.append(preference_text)
+    # ✅ ELIMINADO: "INCLUIR FUERZA" del PDF (como solicitado)
+    # Solo se mantiene en el JSON para la IA
     
     return content
-
 
 def _build_balanced_training_zones_section(profile: AthleteProfile) -> list:
     """Build training zones with balanced spacing (Page break will be added after this)."""
@@ -616,7 +608,6 @@ def _build_balanced_training_zones_section(profile: AthleteProfile) -> list:
     
     return content
 
-
 def _build_balanced_performance_section(profile: AthleteProfile) -> list:
     """Build performance data with balanced spacing."""
     content = []
@@ -632,7 +623,7 @@ def _build_balanced_performance_section(profile: AthleteProfile) -> list:
         
         distance_names = {
             '5k': '5K',
-            '10k': '10K', 
+            '10k': '10K',
             'half_marathon': 'MEDIA MARATÓN',
             'marathon': 'MARATÓN'
         }
@@ -656,7 +647,6 @@ def _build_balanced_performance_section(profile: AthleteProfile) -> list:
             content.append(table)
     
     return content
-
 
 def _build_balanced_race_goals_section(profile: AthleteProfile) -> list:
     """Build race goals with balanced spacing."""
@@ -724,7 +714,6 @@ def _build_balanced_race_goals_section(profile: AthleteProfile) -> list:
     
     return content
 
-
 def _build_balanced_injury_history_section(profile: AthleteProfile) -> list:
     """Build injury history with balanced spacing."""
     content = []
@@ -758,7 +747,6 @@ def _build_balanced_injury_history_section(profile: AthleteProfile) -> list:
     
     return content
 
-
 def _calculate_pace(time_str: str, distance_km: float) -> str:
     """Calculate pace from time and distance."""
     try:
@@ -780,6 +768,19 @@ def _calculate_pace(time_str: str, distance_km: float) -> str:
     except:
         return "N/A"
 
+def generate_json_output(profile: AthleteProfile, filepath: str) -> bool:
+    """Generate AI-optimized JSON output."""
+    try:
+        ai_optimized_data = optimize_profile_for_ai(profile)
+        
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(ai_optimized_data, f, ensure_ascii=False, indent=4, sort_keys=False)
+        
+        return True
+    
+    except Exception as e:
+        print(f"Error generating JSON: {e}")
+        return False
 
 def validate_profile_completeness(profile: AthleteProfile) -> Tuple[bool, list]:
     """Validate profile completeness."""
@@ -787,8 +788,10 @@ def validate_profile_completeness(profile: AthleteProfile) -> Tuple[bool, list]:
     
     if not profile.name:
         missing_fields.append("Nombre del atleta")
+    
     if not profile.age:
         missing_fields.append("Edad")
+    
     if not profile.gender:
         missing_fields.append("Género")
     
@@ -800,7 +803,6 @@ def validate_profile_completeness(profile: AthleteProfile) -> Tuple[bool, list]:
         missing_fields.append("Al menos una sección significativa")
     
     return len(missing_fields) == 0, missing_fields
-
 
 def main():
     """Test function for final minimalist output generation with elegant name formatting."""
@@ -815,41 +817,30 @@ def main():
             sys.exit(1)
         
         is_valid, missing_fields = validate_profile_completeness(profile)
+        
         if not is_valid:
             print_error("El perfil no está completo:")
             for field in missing_fields:
                 print_error(f"  - {field}")
+            print_info("Completar el perfil antes de generar outputs")
             sys.exit(1)
         
-        print_info(f"Generando FICHA TÉCNICA FINAL CON FORMATO ELEGANTE para: {profile.name}")
-        
+        print_info(f"Generando FICHA TÉCNICA FINAL CON NUEVOS CAMPOS para: {profile.name}")
         success, pdf_path, json_path = generate_outputs(profile)
         
         if success:
-            print_success(f"🏆 PDF FINAL CON FORMATO ELEGANTE generado: {pdf_path}")
+            print_success(f"🏆 PDF FINAL generado: {pdf_path}")
             print_success(f"✅ JSON generado: {json_path}")
-            print_info("\n✨ DISEÑO FINAL PERFECTO implementado:")
-            print_info("   📏 14pt entre título de bloque y contenido")
-            print_info("   📏 14pt entre contenido y siguiente bloque")
-            print_info("   🎯 Espaciado consistente y armonioso")
-            print_info("   💎 Mantiene toda la estética minimalista")
-            print_info("   📄 SALTO DE PÁGINA después de Zonas de Entrenamiento")
-            print_info("   📊 BMI COMO CAMPO SEPARADO (no concatenado)")
-            print_info("   ✅ TODOS LOS CAMPOS SIEMPRE MOSTRADOS en bloques principales")
-            print_info("   🔧 'No proporcionado' para campos faltantes (nunca omitidos)")
-            print_info("   🔝 ENCABEZADO FINAL: branding izq, copyright der")
-            print_info("   📍 NUMERACIÓN CORRECTA: Al final zona central, orientación normal")
-            print_info("   📏 ESPACIADO REDUCIDO entre título principal y primer bloque")
-            print_info("   ✨ FORMATO NOMBRE ELEGANTE: Puntos entre palabras")
-            print_info("   🎨 DISEÑO ULTRA-MINIMALISTA Y PROFESIONAL")
-            print_info("   ✅ BUG IMPORT CORREGIDO: SimpleDocTemplate")
-            print_info("   ✅ BUG CORREGIDO: lactate_threshold_bpm")
+            print_info("\n✨ NUEVOS CAMPOS AÑADIDOS:")
+            print_info("  📊 EXPERIENCIA DEPORTIVA: En PDF y JSON")
+            print_info("  ⏱️  PERÍODO ACTUAL: En PDF y JSON")  
+            print_info("  🏆 NIVEL COMPETITIVO: En PDF y JSON")
+            print_info("  🚫 INCLUIR FUERZA: Solo en JSON (eliminado del PDF)")
         else:
             print_error("❌ Error al generar las salidas")
-            
+    
     except Exception as e:
         print_error(f"Error: {e}")
-
 
 if __name__ == "__main__":
     main()

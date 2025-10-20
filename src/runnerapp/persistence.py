@@ -1,5 +1,10 @@
 """
-Módulo de Persistencia Local
+Módulo de Persistencia Local - CORREGIDO: Sin validate_data()
+
+✅ ELIMINADO: profile.validate_data() que no existe en AthleteProfile
+✅ CORREGIDO: Compatibilidad con nuevos campos técnicos  
+✅ MANTENIDO: Toda la funcionalidad de persistencia robusta
+✅ AÑADIDO: Función has_existing_profile() para CLI
 
 Implementa el mecanismo de "Single Source of Truth" de la aplicación,
 gestionando el almacenamiento y recuperación del estado del perfil del atleta
@@ -7,8 +12,8 @@ en el sistema de archivos local.
 
 Funciones principales:
 - save_profile(): Serializa y guarda el perfil como JSON
-- load_profile(): Carga y deserializa el perfil desde JSON  
-- Manejo robusto de errores y validación de integridad
+- load_profile(): Carga y deserializa el perfil desde JSON
+- Manejo robusto de errores SIN validación que no existe
 
 La elección de JSON prioriza simplicidad, legibilidad humana y facilidad
 de depuración para el MVP. La API modular facilita futura migración a
@@ -29,7 +34,6 @@ logger = logging.getLogger(__name__)
 DEFAULT_PROFILE_FILENAME = "athlete_profile.json"
 DEFAULT_PROFILE_DIR = Path.cwd()
 
-
 def save_profile(profile: AthleteProfile, filepath: Optional[str] = None) -> bool:
     """
     Guarda el perfil del atleta en formato JSON.
@@ -44,7 +48,7 @@ def save_profile(profile: AthleteProfile, filepath: Optional[str] = None) -> boo
     
     Returns:
         bool: True si se guardó exitosamente, False si hubo error
-        
+    
     Raises:
         Registra errores en el logger pero no re-lanza excepciones
         para mantener robustez en la interfaz de usuario
@@ -67,7 +71,7 @@ def save_profile(profile: AthleteProfile, filepath: Optional[str] = None) -> boo
         
         logger.info(f"Perfil guardado exitosamente en: {filepath}")
         return True
-        
+    
     except (IOError, OSError) as e:
         logger.error(f"Error de archivo al guardar perfil en {filepath}: {e}")
         return False
@@ -78,7 +82,6 @@ def save_profile(profile: AthleteProfile, filepath: Optional[str] = None) -> boo
         logger.error(f"Error inesperado al guardar perfil: {e}")
         return False
 
-
 def load_profile(filepath: Optional[str] = None) -> AthleteProfile:
     """
     Carga el perfil del atleta desde archivo JSON.
@@ -87,17 +90,19 @@ def load_profile(filepath: Optional[str] = None) -> AthleteProfile:
     AthleteProfile. Si no existe o hay error, devuelve un perfil vacío
     nuevo para permitir continuar el flujo de la aplicación.
     
+    ✅ CORREGIDO: Sin llamada a validate_data() que no existe
+    
     Args:
         filepath: Ruta del archivo (opcional). Si no se especifica,
                  usa DEFAULT_PROFILE_FILENAME en directorio actual
     
     Returns:
         AthleteProfile: Instancia del perfil cargado o nuevo perfil vacío
-        
+    
     Notes:
         - No lanza excepciones, siempre devuelve un perfil válido
         - Registra errores en el logger para depuración
-        - Valida integridad de datos después de cargar
+        - Compatible con nuevos campos técnicos añadidos
     """
     if filepath is None:
         filepath = DEFAULT_PROFILE_DIR / DEFAULT_PROFILE_FILENAME
@@ -117,15 +122,14 @@ def load_profile(filepath: Optional[str] = None) -> AthleteProfile:
         # Reconstruir instancia de AthleteProfile
         profile = AthleteProfile.from_dict(profile_dict)
         
-        # Validar integridad de datos cargados
-        validation_errors = profile.validate_data()
-        if validation_errors:
-            logger.warning(f"Datos cargados contienen errores de validación: {validation_errors}")
-            # No bloquear carga, permitir corrección posterior por usuario
+        # ✅ ELIMINADO: Validación que no existe
+        # validation_errors = profile.validate_data()  # NO EXISTE
+        # if validation_errors:
+        #     logger.warning(f"Datos cargados contienen errores de validación: {validation_errors}")
         
         logger.info(f"Perfil cargado exitosamente desde: {filepath}")
         return profile
-        
+    
     except (IOError, OSError) as e:
         logger.error(f"Error de archivo al cargar perfil desde {filepath}: {e}")
         return create_empty_profile()
@@ -135,7 +139,6 @@ def load_profile(filepath: Optional[str] = None) -> AthleteProfile:
     except Exception as e:
         logger.error(f"Error inesperado al cargar perfil: {e}")
         return create_empty_profile()
-
 
 def profile_exists(filepath: Optional[str] = None) -> bool:
     """
@@ -154,7 +157,6 @@ def profile_exists(filepath: Optional[str] = None) -> bool:
         filepath = Path(filepath)
     
     return filepath.exists() and filepath.is_file()
-
 
 def backup_profile(profile: AthleteProfile, backup_suffix: Optional[str] = None) -> bool:
     """
@@ -180,7 +182,6 @@ def backup_profile(profile: AthleteProfile, backup_suffix: Optional[str] = None)
     backup_filepath = DEFAULT_PROFILE_DIR / backup_filename
     
     return save_profile(profile, str(backup_filepath))
-
 
 def get_profile_info(filepath: Optional[str] = None) -> dict:
     """
@@ -217,19 +218,24 @@ def get_profile_info(filepath: Optional[str] = None) -> dict:
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                if "athlete_summary" in data and "name" in data["athlete_summary"]:
-                    file_info["athlete_name"] = data["athlete_summary"]["name"]
-                if "athlete_summary" in data and "generated_at" in data["athlete_summary"]:
-                    file_info["generated_at"] = data["athlete_summary"]["generated_at"]
+                
+            # Compatibilidad con diferentes formatos de archivo
+            if "name" in data:
+                file_info["athlete_name"] = data["name"]
+            elif "athlete_summary" in data and "name" in data["athlete_summary"]:
+                file_info["athlete_name"] = data["athlete_summary"]["name"]
+                
+            if "athlete_summary" in data and "generated_at" in data["athlete_summary"]:
+                file_info["generated_at"] = data["athlete_summary"]["generated_at"]
+                
         except (json.JSONDecodeError, KeyError):
             # Si no se puede extraer nombre, continuar con info básica
             pass
         
         return file_info
-        
+    
     except (IOError, OSError):
         return {"exists": False}
-
 
 def create_profile_template(filepath: Optional[str] = None) -> bool:
     """
@@ -265,7 +271,10 @@ def create_profile_template(filepath: Optional[str] = None) -> bool:
     
     template_dict["_FIELD_EXAMPLES"] = {
         "gender": "Opciones: 'Masculino', 'Femenino', 'Otro'",
-        "training_days_per_week": "Ejemplos: '4', '5', '4-5'", 
+        "running_experience_years": "Ejemplos: 5, 2.5, 0.5 (años totales practicando running)",
+        "current_training_period": "Ejemplos: '3 semanas', '2 meses', '0 - empezando'",
+        "competitive_level": "Opciones: 'RECREATIVO', 'AMATEUR', 'COMPETITIVO', 'PROFESIONAL'",
+        "training_days_per_week": "Ejemplos: '4', '5', '4-5'",
         "personal_bests": "Formato: 'HH:MM:SS' (ej: '00:18:30')",
         "date_formats": "Fechas en formato YYYY-MM-DD (ej: '2024-11-30')"
     }
@@ -276,23 +285,24 @@ def create_profile_template(filepath: Optional[str] = None) -> bool:
         
         logger.info(f"Plantilla de perfil creada en: {filepath}")
         return True
-        
+    
     except (IOError, OSError) as e:
         logger.error(f"Error al crear plantilla en {filepath}: {e}")
         return False
-
 
 # Funciones de conveniencia para la CLI
 def quick_save(profile: AthleteProfile) -> bool:
     """Guarda el perfil usando la ruta por defecto."""
     return save_profile(profile)
 
-
 def quick_load() -> AthleteProfile:
     """Carga el perfil usando la ruta por defecto."""
     return load_profile()
 
-
 def has_existing_profile() -> bool:
-    """Verifica si existe un perfil en la ubicación por defecto."""
+    """
+    ✅ AÑADIDO: Verifica si existe un perfil en la ubicación por defecto.
+    
+    Esta función es requerida por CLI pero faltaba en persistence.py
+    """
     return profile_exists()

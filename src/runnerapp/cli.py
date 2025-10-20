@@ -1,5 +1,10 @@
 """
-Interfaz de Línea de Comandos (CLI) - Implementación Completa
+Interfaz de Línea de Comandos (CLI) - CON NUEVOS CAMPOS TÉCNICOS
+
+✅ AÑADIDOS: Nuevos campos en sección de contexto de entrenamiento:
+- Experiencia Deportiva (running_experience_years)
+- Período de Entrenamiento Actual (current_training_period)  
+- Nivel Competitivo (competitive_level)
 
 Este módulo implementa la experiencia interactiva completa para la entrada
 manual de datos. Utiliza prompt-toolkit para crear un cuestionario guiado,
@@ -16,6 +21,7 @@ Características principales:
 - CTRL+C durante entrada de datos: descarta cambios de sección y vuelve al menú
 - Sistema de detección de cambios en tiempo real (sin flags desincronizados)
 - Gestión completa de carreras intermedias y lesiones (añadir/editar/eliminar)
+- ✅ VALIDACIÓN EN BUCLE para coherencia de días de entrenamiento
 """
 
 import sys
@@ -30,7 +36,7 @@ from .models import AthleteProfile, Injury, Race, create_empty_profile
 from .persistence import save_profile, load_profile, has_existing_profile
 from .calculations import (
     normalize_gender_input, parse_time_input, parse_training_days_input,
-    parse_quality_session_preference, calculate_training_zones,
+    parse_unavailable_days_input, calculate_training_zones,
     validate_heart_rates, validate_physical_metrics, validate_race_date,
     format_distance_for_display, suggest_training_weeks
 )
@@ -50,6 +56,7 @@ from .cli_helpers import (
     display_welcome_message, clear_screen, display_completion_message
 )
 
+from .training_period_validator import TrainingPeriodValidator, parse_training_period
 
 def start_interactive_cli(existing_profile: Optional[AthleteProfile] = None) -> AthleteProfile:
     """
@@ -212,11 +219,11 @@ def show_main_menu(profile: AthleteProfile, has_changes: bool = False) -> str:
     else:
         print_info("💾 Todos los cambios están guardados")
     
-    # Calcular progreso
+    # Calcular progreso - ACTUALIZADO para nuevos campos
     sections = [
         ("Información Personal", bool(profile.name and profile.age and profile.gender)),
         ("Métricas Fisiológicas", bool(profile.max_hr and profile.resting_hr)),
-        ("Contexto Entrenamiento", bool(profile.avg_weekly_km and profile.training_days_per_week)),
+        ("Contexto Entrenamiento", bool(profile.avg_weekly_km and (profile.training_days_per_week or profile.available_training_days))),  # ACTUALIZADO
         ("Datos Rendimiento", bool(profile.personal_bests and any(profile.personal_bests.values()))),
         ("Objetivos Carrera", bool(profile.main_objective)),
         ("Historial Lesiones", has_completed_injury_section(profile))
@@ -453,7 +460,12 @@ def prompt_physiological_metrics(profile: AthleteProfile) -> AthleteProfile:
         return original_profile
 
 def prompt_training_context(profile: AthleteProfile) -> AthleteProfile:
-    """Solicita contexto de entrenamiento."""
+    """
+    Solicita contexto de entrenamiento CON NUEVOS CAMPOS TÉCNICOS.
+    
+    ✅ AÑADIDOS: 3 nuevos campos técnicos
+    ✅ MODIFICADO: Incluye validación en bucle para días no disponibles
+    """
     print_section_header("Contexto de Entrenamiento")
     
     # Crear copia de seguridad del perfil al inicio de la sección
@@ -474,11 +486,11 @@ def prompt_training_context(profile: AthleteProfile) -> AthleteProfile:
         if weekly_km_input:
             profile.avg_weekly_km = float(weekly_km_input.replace(',', '.'))
         
-        # Días de entrenamiento
+        # Días de entrenamiento por semana (mantener para contexto actual)
         days_input = prompt(
             format_prompt_with_hint(
                 "Días de entrenamiento por semana",
-                "ej: 4 o 4-5 para rango",
+                "contexto actual - ej: 4 o 4-5 para rango",
                 profile.training_days_per_week
             ),
             validator=training_days_validator,
@@ -487,6 +499,83 @@ def prompt_training_context(profile: AthleteProfile) -> AthleteProfile:
         ).strip()
         if days_input:
             profile.training_days_per_week = parse_training_days_input(days_input)
+        
+        # ✅ NUEVO CAMPO 1: Experiencia Deportiva (años corriendo)
+        experience_input = prompt(
+            format_prompt_with_hint(
+                "Experiencia deportiva en running",
+                "años totales practicando running - ej: 5 o 2.5",
+                profile.running_experience_years
+            ),
+            validator=OptionalFloatValidator(0, 50),
+            default=str(profile.running_experience_years) if profile.running_experience_years else "",
+            style=APP_STYLE
+        ).strip()
+        if experience_input:
+            profile.running_experience_years = float(experience_input.replace(',', '.'))
+        
+        # ✅ NUEVO CAMPO 2: Período de Entrenamiento Actual
+        current_period_input = prompt(
+            format_prompt_with_hint(
+                "Período de entrenamiento actual",
+                "tiempo entrenando actualmente - ej: '3 semanas', '2 meses', '0 - empezando'",
+                profile.current_training_period
+            ),
+            validator=TrainingPeriodValidator(),
+            default=profile.current_training_period or "",
+            style=APP_STYLE
+        ).strip()
+        if current_period_input:
+            normalized_period = parse_training_period(current_period_input)
+            profile.current_training_period = normalized_period
+            
+            # Mostrar confirmación si se normalizó
+            if normalized_period != current_period_input:
+                print_success(f"✅ Período normalizado a: '{normalized_period}'")        
+
+        # CAMPO EXISTENTE: Días disponibles para entrenar (acepta rangos)
+        available_days_input = prompt(
+            format_prompt_with_hint(
+                "Días disponibles para entrenar",
+                "ej: 4, 3-4, 5-6 (acepta rangos coherentes)",
+                profile.available_training_days
+            ),
+            validator=training_days_validator,
+            default=profile.available_training_days or profile.training_days_per_week or "",
+            style=APP_STYLE
+        ).strip()
+        if available_days_input:
+            profile.available_training_days = parse_training_days_input(available_days_input)
+        
+        # ✅ CAMPO EXISTENTE CON BUCLE DE VALIDACIÓN: Días NO disponibles
+        while True:
+            unavailable_days_input = prompt(
+                format_prompt_with_hint(
+                    "Días NO disponibles para entrenar",
+                    "ej: Domingo, D, L,D (acepta abreviaciones) — vacío = sin restricciones",
+                    profile.unavailable_days
+                ),
+                default=profile.unavailable_days or "",
+                style=APP_STYLE
+            ).strip()
+
+            # Vacío es válido: significa sin restricciones
+            if unavailable_days_input == "":
+                profile.unavailable_days = ""
+                break
+
+            # Normalizar y validar coherencia
+            normalized = parse_unavailable_days_input(unavailable_days_input)
+            profile.unavailable_days = normalized
+
+            validation_errors = profile._validate_training_days_coherence()
+            if validation_errors:
+                print_warning("⚠️ Advertencias de coherencia:")
+                for error in validation_errors:
+                    print_warning(f"  - {error}")
+                print_info("Por favor, introduzca un valor coherente o deje vacío si no tiene restricciones.")
+                continue
+            break
         
         # Historial de fuerza
         strength_history_input = prompt(
@@ -516,19 +605,6 @@ def prompt_training_context(profile: AthleteProfile) -> AthleteProfile:
         if include_strength_input:
             profile.include_strength_training = include_strength_input.lower() in ['sí', 'si', 's', 'yes', 'y']
         
-        # Preferencia días de calidad
-        quality_days_input = prompt(
-            format_prompt_with_hint(
-                "Preferencia días para sesiones de calidad",
-                "ej: Martes, Jueves o Sin preferencia",
-                profile.quality_session_preference
-            ),
-            default=profile.quality_session_preference or "",
-            style=APP_STYLE
-        ).strip()
-        if quality_days_input:
-            profile.quality_session_preference = parse_quality_session_preference(quality_days_input)
-        
         display_completion_message("Contexto de Entrenamiento")
         return profile
         
@@ -541,17 +617,20 @@ def prompt_training_context(profile: AthleteProfile) -> AthleteProfile:
 def prompt_performance_data(profile: AthleteProfile) -> AthleteProfile:
     """Solicita datos de rendimiento y marcas personales."""
     print_section_header("Datos de Rendimiento")
-    
+
     # Crear copia de seguridad del perfil al inicio de la sección
     original_profile = AthleteProfile.from_dict(profile.to_dict())
-    
+
     try:
         print_info("Ingrese sus mejores marcas personales (puede omitir las que no tenga)")
-        
+
         # Asegurar que personal_bests esté inicializado
         if not profile.personal_bests:
             profile.personal_bests = {}
-        
+
+        # Crear una copia temporal para trabajar
+        temp_personal_bests = profile.personal_bests.copy()
+
         # Distancias estándar
         standard_distances = [
             ("5k", "5 Kilómetros"),
@@ -559,9 +638,9 @@ def prompt_performance_data(profile: AthleteProfile) -> AthleteProfile:
             ("half_marathon", "Media Maratón (21K)"),
             ("marathon", "Maratón (42K)")
         ]
-        
+
         for key, description in standard_distances:
-            current_time = profile.personal_bests.get(key)
+            current_time = temp_personal_bests.get(key)
             time_input = prompt(
                 format_prompt_with_hint(
                     f"Mejor marca en {description}",
@@ -572,18 +651,21 @@ def prompt_performance_data(profile: AthleteProfile) -> AthleteProfile:
                 default=current_time or "",
                 style=APP_STYLE
             ).strip()
-            
+
             if time_input:
                 parsed_time = parse_time_input(time_input)
                 if parsed_time:
-                    profile.personal_bests[key] = parsed_time
+                    temp_personal_bests[key] = parsed_time
                     print_success(f"Marca en {description}: {parsed_time}")
                 else:
                     print_warning(f"No se pudo parsear el tiempo: {time_input}")
             elif current_time:
                 # Mantener tiempo existente si no se ingresa nada
-                profile.personal_bests[key] = current_time
-        
+                temp_personal_bests[key] = current_time
+
+        # ✅ **CORRECCIÓN**: Asignar el diccionario temporal al perfil al final
+        profile.personal_bests = temp_personal_bests
+
         # Estimar VO2máx si no se tiene y hay marcas
         if not profile.vo2_max and profile.age and profile.weight_kg:
             best_time_for_estimation = None
@@ -808,7 +890,7 @@ def manage_intermediate_races_complete(profile: AthleteProfile) -> AthleteProfil
     
     return profile
 
-def select_race_to_modify(races: List[Race], action: str) -> Optional[int]:
+def select_race_to_modify(races: List, action: str) -> Optional[int]:
     """Permite seleccionar una carrera para modificar."""
     if not races:
         return None
@@ -1008,7 +1090,7 @@ def manage_injury_history(profile: AthleteProfile) -> AthleteProfile:
         print_info("↩️ Volviendo al menú principal...")
         return original_profile
 
-def select_injury_to_modify(injuries: List[Injury], action: str) -> Optional[int]:
+def select_injury_to_modify(injuries: List, action: str) -> Optional[int]:
     """Permite seleccionar una lesión para modificar."""
     if not injuries:
         return None
@@ -1152,21 +1234,27 @@ def display_injury_summary(injuries: List) -> None:
         print_info(f"  {i}. {injury.type} ({injury.date_approx})")
         print_info(f"     🏥 Recuperación: {injury.recovery_desc}")
 
-# Clase auxiliar para validación opcional de enteros
-class OptionalIntegerValidator:
-    """Validador para enteros opcionales con rangos."""
+# ✅ Clases auxiliares para validación
+class OptionalIntegerValidator(Validator):
+    """
+    ✅ CORREGIDO: Validador para enteros opcionales con herencia correcta.
     
-    def __init__(self, min_val: int = None, max_val: int = None):
+    Permite campos vacíos (opcionales) y valida rangos cuando hay valor.
+    Compatible con prompt_toolkit async validation.
+    """
+    
+    def __init__(self, min_val: Optional[int] = None, max_val: Optional[int] = None):
         self.min_val = min_val
         self.max_val = max_val
-        
-    def validate(self, document) -> None:
-        from prompt_toolkit.validation import ValidationError
+        super().__init__()
+    
+    def validate(self, document: Document) -> None:
+        """Validación síncrona requerida por Validator"""
         text = document.text.strip()
         
         if not text:
-            return  # Opcional
-            
+            return  # Opcional - permitir campo vacío
+        
         try:
             value = int(text)
             if self.min_val and value < self.min_val:
@@ -1175,6 +1263,75 @@ class OptionalIntegerValidator:
                 raise ValidationError(message=f'Valor debe ser ≤ {self.max_val}')
         except ValueError:
             raise ValidationError(message='Ingrese un número entero válido')
+    
+    async def validate_async(self, document: Document) -> None:
+        """✅ AÑADIDO: Validación async requerida por prompt_toolkit"""
+        # Para validadores simples como este, podemos usar la validación síncrona
+        self.validate(document)
+
+class OptionalFloatValidator(Validator):
+    """
+    ✅ CORREGIDO: Validador para flotantes opcionales con herencia correcta.
+    
+    Permite campos vacíos (opcionales) y valida rangos cuando hay valor.
+    Compatible con prompt_toolkit async validation.
+    """
+    
+    def __init__(self, min_val: Optional[float] = None, max_val: Optional[float] = None):
+        self.min_val = min_val
+        self.max_val = max_val
+        super().__init__()
+    
+    def validate(self, document: Document) -> None:
+        """Validación síncrona requerida por Validator"""
+        text = document.text.strip()
+        
+        if not text:
+            return  # Opcional - permitir campo vacío
+        
+        try:
+            # Permitir comas como separador decimal
+            value = float(text.replace(',', '.'))
+            if self.min_val is not None and value < self.min_val:
+                raise ValidationError(message=f'Valor debe ser ≥ {self.min_val}')
+            if self.max_val is not None and value > self.max_val:
+                raise ValidationError(message=f'Valor debe ser ≤ {self.max_val}')
+        except ValueError:
+            raise ValidationError(message='Ingrese un número válido (use . o , para decimales)')
+    
+    async def validate_async(self, document: Document) -> None:
+        """✅ AÑADIDO: Validación async requerida por prompt_toolkit"""
+        # Para validadores simples como este, podemos usar la validación síncrona
+        self.validate(document)
+
+class OptionalStringValidator(Validator):
+    """
+    ✅ NUEVO: Validador para campos de texto opcionales con longitud.
+    
+    Útil para campos como current_training_period que pueden estar vacíos
+    pero tienen restricciones de longitud cuando tienen contenido.
+    """
+    
+    def __init__(self, min_length: Optional[int] = None, max_length: Optional[int] = None):
+        self.min_length = min_length
+        self.max_length = max_length
+        super().__init__()
+    
+    def validate(self, document: Document) -> None:
+        """Validación síncrona requerida por Validator"""
+        text = document.text.strip()
+        
+        if not text:
+            return  # Opcional - permitir campo vacío
+        
+        if self.min_length is not None and len(text) < self.min_length:
+            raise ValidationError(message=f'Mínimo {self.min_length} caracteres')
+        if self.max_length is not None and len(text) > self.max_length:
+            raise ValidationError(message=f'Máximo {self.max_length} caracteres')
+    
+    async def validate_async(self, document: Document) -> None:
+        """✅ AÑADIDO: Validación async requerida por prompt_toolkit"""
+        self.validate(document)
 
 def main():
     """Función principal para testing independiente del módulo CLI."""
@@ -1190,7 +1347,6 @@ def main():
     except Exception as e:
         print_error(f"Error en CLI: {e}")
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()

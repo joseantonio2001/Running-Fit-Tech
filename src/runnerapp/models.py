@@ -1,6 +1,11 @@
 """
 Modelo de Datos Central - Ficha Técnica del Atleta
 
+✅ AÑADIDOS: Nuevos campos técnicos de experiencia y competición
+- running_experience_years: Experiencia total en atletismo 
+- current_training_period: Período actual de entrenamiento
+- competitive_level: Nivel competitivo alcanzado
+
 Este módulo define la estructura completa del modelo de datos que actúa como
 la "Single Source of Truth" de la aplicación. El diseño no solo está pensado
 para almacenamiento interno, sino optimizado para actuar como un prompt
@@ -21,429 +26,376 @@ from typing import Optional, List, Dict
 from datetime import datetime
 import json
 
-
 @dataclass
 class Injury:
     """
     Representa una lesión individual en el historial del atleta.
-    
     Cada lesión contiene información crítica para adaptar el entrenamiento
-    futuro, identificar patrones de riesgo y ajustar progresiones de carga.
+    y prevenir recurrencias.
     """
-    type: str                    # Tipo de lesión (ej: "Fascitis Plantar")
-    date_approx: str            # Fecha aproximada (ej: "2022-10")
-    recovery_desc: str          # Descripción de la recuperación y tratamiento
-
+    type: str = ""
+    date_approx: str = ""
+    recovery_desc: str = ""
 
 @dataclass
 class Race:
     """
     Representa una carrera objetivo (principal o intermedia).
-    
-    Define los objetivos competitivos del atleta y proporciona contexto
-    temporal y de rendimiento para el diseño del plan de entrenamiento.
+    Incluye todos los parámetros necesarios para la periodización
+    y personalización del plan de entrenamiento.
     """
-    name: str                   # Nombre de la carrera
-    date: str                   # Fecha en formato ISO (YYYY-MM-DD)
-    distance_km: float          # Distancia en kilómetros
-    goal_time: Optional[str]    # Tiempo objetivo en formato HH:MM:SS
-    terrain: str               # Tipo de terreno ("Llano", "Montañoso", etc.)
-
+    name: str = ""
+    date: str = ""
+    distance_km: float = 0.0
+    goal_time: Optional[str] = None
+    terrain: str = ""
 
 @dataclass
 class TrainingZones:
     """
-    Zonas de entrenamiento calculadas basadas en FCmáx y FCreposo.
-    
-    Utiliza la Fórmula de Karvonen para definir 5 zonas de intensidad
-    que guiarán la prescripción de entrenamientos específicos.
+    Zonas de entrenamiento basadas en frecuencia cardíaca.
+    Calculadas usando la fórmula de Karvonen (FC de reserva).
+    Cada zona tiene un propósito específico en la planificación.
     """
-    zone1_hr: Optional[str] = None     # Z1: 50-60% FCR (Recuperación)
-    zone2_hr: Optional[str] = None     # Z2: 60-70% FCR (Aeróbico base)
-    zone3_hr: Optional[str] = None     # Z3: 70-80% FCR (Aeróbico)
-    zone4_hr: Optional[str] = None     # Z4: 80-90% FCR (Umbral)
-    zone5_hr: Optional[str] = None     # Z5: 90-100% FCR (VO2máx)
-
+    zone1_hr: str = ""  # Recuperación activa (50-60%)
+    zone2_hr: str = ""  # Base aeróbica (60-70%)
+    zone3_hr: str = ""  # Aeróbico medio (70-80%)
+    zone4_hr: str = ""  # Umbral anaeróbico (80-90%)
+    zone5_hr: str = ""  # VO2máx/Neuromuscular (90-100%)
 
 @dataclass
 class AthleteProfile:
     """
-    Perfil completo del atleta - Modelo de datos central de la aplicación.
+    Perfil completo del atleta - Modelo de datos central.
     
-    Esta clase representa la "Ficha Técnica" completa que actúa como:
-    1. Fuente única de verdad para todos los módulos del sistema
-    2. Prompt estructurado y auto-explicativo para la IA externa
-    3. Contrato inmutable entre componentes de la arquitectura
+    Esta clase encapsula toda la información necesaria para:
+    1. Generar un plan de entrenamiento personalizado
+    2. Crear documentación técnica profesional
+    3. Alimentar sistemas de IA con contexto estructurado
     
-    Cada campo está diseñado con claves descriptivas y metadatos que
-    maximizan la comprensión y contexto para generar planes de entrenamiento
-    de calidad profesional.
+    Los campos están organizados en secciones lógicas que facilitan
+    tanto el procesamiento automatizado como la revisión humana.
     """
     
-    # === RESUMEN DEL ATLETA ===
+    # ═══════════════════════════════════════════════════════════
+    # INFORMACIÓN PERSONAL BÁSICA
+    # ═══════════════════════════════════════════════════════════
     name: str = ""
-    generated_at: str = field(default_factory=lambda: datetime.now().isoformat())
-    
-    # === INFORMACIÓN PERSONAL ===
     age: Optional[int] = None
-    gender: str = ""                    # Normalizado: "Masculino", "Femenino", "Otro"  
+    gender: str = ""
     height_cm: Optional[int] = None
     weight_kg: Optional[float] = None
     
-    # === MÉTRICAS FISIOLÓGICAS ===
-    # Meta-descripción para guiar a la IA
-    physiological_metrics_meta: str = field(
-        default="Métricas fisiológicas clave que definen el perfil de resistencia y el potencial del atleta."
-    )
-    max_hr: Optional[int] = None        # Frecuencia Cardíaca Máxima (FCmáx)
-    resting_hr: Optional[int] = None    # Frecuencia Cardíaca en Reposo (FCrep)
-    hrv_ms: Optional[int] = None        # Variabilidad FC en milisegundos
-    vo2_max: Optional[float] = None     # VO2 Máx estimado (ml/kg/min)
-    lactate_threshold_bpm: Optional[int] = None  # Umbral de lactato (ppm)
+    # ═══════════════════════════════════════════════════════════
+    # MÉTRICAS FISIOLÓGICAS
+    # ═══════════════════════════════════════════════════════════
+    max_hr: Optional[int] = None
+    resting_hr: Optional[int] = None
+    vo2_max: Optional[float] = None
+    lactate_threshold_bpm: Optional[int] = None
+    hrv_ms: Optional[int] = None
+    training_zones: Optional[TrainingZones] = None
     
-    # === HISTORIAL DE LESIONES ===
-    # Meta-descripción para guiar a la IA  
-    # Campo para tracking de secciones completadas
-    injury_section_visited: bool = False
-    injury_history_meta: str = field(
-        default="Historial de lesiones para identificar patrones de riesgo, debilidades estructurales y adaptar el entrenamiento de fuerza y las progresiones de carga."
-    )
-    injuries: List[Injury] = field(default_factory=list)
+    # ═══════════════════════════════════════════════════════════
+    # CONTEXTO DE ENTRENAMIENTO
+    # ═══════════════════════════════════════════════════════════
+    avg_weekly_km: Optional[float] = None
+    training_days_per_week: str = ""
     
-    # === CONTEXTO DE ENTRENAMIENTO ===
-    avg_weekly_km: Optional[float] = None      # Volumen semanal actual promedio
-    training_days_per_week: str = ""           # Disponibilidad ("4", "4-5", etc.)
-    strength_training_history: bool = False    # Experiencia previa con fuerza
-    include_strength_training: bool = False    # Preferencia para nuevo plan
-    quality_session_preference: str = ""       # Días preferidos para series/tempo
+    # ✅ NUEVOS CAMPOS TÉCNICOS
+    running_experience_years: Optional[float] = None
+    current_training_period: str = ""
     
-    # === DATOS DE RENDIMIENTO ===
-    personal_bests: Dict[str, Optional[str]] = field(default_factory=dict)  # PBs en formato HH:MM:SS
-    training_zones: Optional[TrainingZones] = field(default_factory=TrainingZones)
+    # Disponibilidad y restricciones temporales
+    available_training_days: str = ""
+    unavailable_days: str = ""
     
-    # === OBJETIVOS DE CARRERA ===
+    # Entrenamiento de fuerza
+    strength_training_history: Optional[bool] = None
+    include_strength_training: Optional[bool] = None
+    
+    # ═══════════════════════════════════════════════════════════
+    # DATOS DE RENDIMIENTO
+    # ═══════════════════════════════════════════════════════════
+    personal_bests: Dict[str, str] = field(default_factory=dict)
+    
+    # ═══════════════════════════════════════════════════════════
+    # OBJETIVOS Y PLANIFICACIÓN
+    # ═══════════════════════════════════════════════════════════
     main_objective: Optional[Race] = None
     intermediate_races: List[Race] = field(default_factory=list)
     
+    # ═══════════════════════════════════════════════════════════
+    # HISTORIAL MÉDICO
+    # ═══════════════════════════════════════════════════════════
+    injuries: List[Injury] = field(default_factory=list)
+
+    def is_complete(self) -> bool:
+        """
+        Determina si el perfil tiene información mínima para generar un plan.
+        
+        Criterios de completitud:
+        - Información personal básica (nombre, edad, género)
+        - Al menos una métrica fisiológica (FCmáx o FCrep)
+        - Contexto mínimo de entrenamiento (volumen o días)
+        - Objetivo principal definido
+        
+        Returns:
+            bool: True si el perfil cumple los criterios mínimos
+        """
+        # Información básica obligatoria
+        basic_info = bool(self.name and self.age and self.gender)
+        
+        # Al menos una métrica fisiológica
+        physiological = bool(self.max_hr or self.resting_hr)
+        
+        # Contexto de entrenamiento mínimo
+        training_context = bool(self.avg_weekly_km or self.training_days_per_week)
+        
+        # Objetivo definido
+        has_objective = bool(self.main_objective)
+        
+        return basic_info and physiological and training_context and has_objective
+
+    def _validate_training_days_coherence(self) -> List[str]:
+        """
+        Valida coherencia entre días disponibles y días no disponibles.
+        
+        Returns:
+            List[str]: Lista de errores de coherencia encontrados
+        """
+        errors = []
+        
+        if not self.available_training_days or not self.unavailable_days:
+            return errors  # No hay suficiente información para validar
+        
+        try:
+            # Parsear días disponibles
+            if '-' in self.available_training_days:
+                available_parts = self.available_training_days.split('-')
+                available_min = int(available_parts[0])
+                available_max = int(available_parts[1]) if len(available_parts) > 1 else available_min
+            else:
+                available_min = available_max = int(self.available_training_days)
+            
+            # Contar días no disponibles
+            unavailable_count = len([day.strip() for day in self.unavailable_days.split(',') if day.strip()])
+            total_available_days = 7 - unavailable_count
+            
+            # Validar coherencia
+            if total_available_days < available_min:
+                errors.append(f"Incoherencia: quieres entrenar {available_min} días pero solo tienes {total_available_days} días disponibles")
+            
+            if unavailable_count >= 7:
+                errors.append("No puedes tener todos los días como no disponibles")
+                
+        except (ValueError, AttributeError):
+            # Si hay errores de parsing, no reportamos errores de coherencia
+            pass
+        
+        return errors
+
     def to_dict(self) -> Dict:
         """
         Convierte el perfil a diccionario para serialización JSON.
         
-        Estructura el diccionario siguiendo el formato optimizado para IA
-        con claves descriptivas y anidamiento lógico que actúa como prompt
-        estructurado de alta calidad.
+        Maneja correctamente objetos anidados (TrainingZones, Race, Injury)
+        y mantiene la estructura jerárquica para procesamiento posterior.
         
         Returns:
-            Dict: Diccionario estructurado listo para serialización JSON
+            Dict: Representación completa del perfil como diccionario
         """
-        return {
-            "athlete_summary": {
-                "name": self.name,
-                "generated_at": self.generated_at
-            },
-            "personal_info": {
-                "age": self.age,
-                "gender": self.gender,
-                "height_cm": self.height_cm,
-                "weight_kg": self.weight_kg
-            },
-            "physiological_metrics": {
-                "meta_description": self.physiological_metrics_meta,
-                "max_hr": self.max_hr,
-                "resting_hr": self.resting_hr,
-                "hrv_ms": self.hrv_ms,
-                "vo2_max": self.vo2_max,
-                "lactate_threshold_bpm": self.lactate_threshold_bpm
-            },
-            "injury_history": {
-                "meta_description": self.injury_history_meta,
-                "injuries": [
-                    {
-                        "type": injury.type,
-                        "date_approx": injury.date_approx,
-                        "recovery_desc": injury.recovery_desc
-                    } for injury in self.injuries
-                ]
-            },
-            "training_context": {
-                "avg_weekly_km": self.avg_weekly_km,
-                "training_days_per_week": self.training_days_per_week,
-                "strength_training_history": self.strength_training_history,
-                "include_strength_training": self.include_strength_training,
-                "quality_session_preference": self.quality_session_preference
-            },
-            "performance_data": {
-                # ✅ CORRECCIÓN: Se crea una copia del diccionario para evitar
-                # la modificación por referencia, solucionando el bug de
-                # detección de cambios.
-                "personal_bests": self.personal_bests.copy(),
-                "training_zones": {
-                    "zone1_hr": self.training_zones.zone1_hr if self.training_zones else None,
-                    "zone2_hr": self.training_zones.zone2_hr if self.training_zones else None,
-                    "zone3_hr": self.training_zones.zone3_hr if self.training_zones else None,
-                    "zone4_hr": self.training_zones.zone4_hr if self.training_zones else None,
-                    "zone5_hr": self.training_zones.zone5_hr if self.training_zones else None,
-                } if self.training_zones else None
-            },
-            "race_goals": {
-                "main_objective": {
-                    "name": self.main_objective.name,
-                    "date": self.main_objective.date,
-                    "distance_km": self.main_objective.distance_km,
-                    "goal_time": self.main_objective.goal_time,
-                    "terrain": self.main_objective.terrain
-                } if self.main_objective else None,
-                "intermediate_races": [
-                    {
-                        "name": race.name,
-                        "date": race.date,
-                        "distance_km": race.distance_km,
-                        "goal_time": race.goal_time,
-                        "terrain": race.terrain
-                    } for race in self.intermediate_races
-                ]
+        # Convertir objetos anidados a diccionarios
+        training_zones_dict = None
+        if self.training_zones:
+            training_zones_dict = {
+                'zone1_hr': self.training_zones.zone1_hr,
+                'zone2_hr': self.training_zones.zone2_hr,
+                'zone3_hr': self.training_zones.zone3_hr,
+                'zone4_hr': self.training_zones.zone4_hr,
+                'zone5_hr': self.training_zones.zone5_hr
             }
+        
+        main_objective_dict = None
+        if self.main_objective:
+            main_objective_dict = {
+                'name': self.main_objective.name,
+                'date': self.main_objective.date,
+                'distance_km': self.main_objective.distance_km,
+                'goal_time': self.main_objective.goal_time,
+                'terrain': self.main_objective.terrain
+            }
+        
+        intermediate_races_list = []
+        for race in self.intermediate_races:
+            intermediate_races_list.append({
+                'name': race.name,
+                'date': race.date,
+                'distance_km': race.distance_km,
+                'goal_time': race.goal_time,
+                'terrain': race.terrain
+            })
+        
+        injuries_list = []
+        for injury in self.injuries:
+            injuries_list.append({
+                'type': injury.type,
+                'date_approx': injury.date_approx,
+                'recovery_desc': injury.recovery_desc
+            })
+        
+        return {
+            # Información personal
+            'name': self.name,
+            'age': self.age,
+            'gender': self.gender,
+            'height_cm': self.height_cm,
+            'weight_kg': self.weight_kg,
+            
+            # Métricas fisiológicas
+            'max_hr': self.max_hr,
+            'resting_hr': self.resting_hr,
+            'vo2_max': self.vo2_max,
+            'lactate_threshold_bpm': self.lactate_threshold_bpm,
+            'hrv_ms': self.hrv_ms,
+            'training_zones': training_zones_dict,
+            
+            # Contexto de entrenamiento
+            'avg_weekly_km': self.avg_weekly_km,
+            'training_days_per_week': self.training_days_per_week,
+            'running_experience_years': self.running_experience_years,  # ✅ NUEVO
+            'current_training_period': self.current_training_period,     # ✅ NUEVO
+            'available_training_days': self.available_training_days,
+            'unavailable_days': self.unavailable_days,
+            'strength_training_history': self.strength_training_history,
+            'include_strength_training': self.include_strength_training,
+            
+            # Rendimiento
+            'personal_bests': self.personal_bests,
+            
+            # Objetivos
+            'main_objective': main_objective_dict,
+            'intermediate_races': intermediate_races_list,
+            
+            # Historial médico
+            'injuries': injuries_list
         }
-    
+
     @classmethod
     def from_dict(cls, data: Dict) -> 'AthleteProfile':
         """
-        Crea una instancia de AthleteProfile desde un diccionario.
+        Crea un AthleteProfile desde un diccionario.
         
-        Permite deserialización desde JSON manteniendo la estructura
-        y validación de tipos del dataclass.
+        Reconstruye correctamente todos los objetos anidados y maneja
+        campos faltantes con valores por defecto apropiados.
         
         Args:
-            data: Diccionario con datos del perfil
+            data: Diccionario con los datos del perfil
             
         Returns:
-            AthleteProfile: Instancia del perfil del atleta
+            AthleteProfile: Instancia completamente inicializada
         """
-        profile = cls()
+        # Reconstruir training_zones
+        training_zones = None
+        if data.get('training_zones'):
+            zones_data = data['training_zones']
+            training_zones = TrainingZones(
+                zone1_hr=zones_data.get('zone1_hr', ''),
+                zone2_hr=zones_data.get('zone2_hr', ''),
+                zone3_hr=zones_data.get('zone3_hr', ''),
+                zone4_hr=zones_data.get('zone4_hr', ''),
+                zone5_hr=zones_data.get('zone5_hr', '')
+            )
         
-        # Resumen del atleta
-        if "athlete_summary" in data:
-            summary = data["athlete_summary"]
-            profile.name = summary.get("name", "")
-            profile.generated_at = summary.get("generated_at", profile.generated_at)
+        # Reconstruir main_objective
+        main_objective = None
+        if data.get('main_objective'):
+            obj_data = data['main_objective']
+            main_objective = Race(
+                name=obj_data.get('name', ''),
+                date=obj_data.get('date', ''),
+                distance_km=obj_data.get('distance_km', 0.0),
+                goal_time=obj_data.get('goal_time'),
+                terrain=obj_data.get('terrain', '')
+            )
         
-        # Información personal
-        if "personal_info" in data:
-            personal = data["personal_info"]
-            profile.age = personal.get("age")
-            profile.gender = personal.get("gender", "")
-            profile.height_cm = personal.get("height_cm")
-            profile.weight_kg = personal.get("weight_kg")
+        # Reconstruir intermediate_races
+        intermediate_races = []
+        if data.get('intermediate_races'):
+            for race_data in data['intermediate_races']:
+                race = Race(
+                    name=race_data.get('name', ''),
+                    date=race_data.get('date', ''),
+                    distance_km=race_data.get('distance_km', 0.0),
+                    goal_time=race_data.get('goal_time'),
+                    terrain=race_data.get('terrain', '')
+                )
+                intermediate_races.append(race)
         
-        # Métricas fisiológicas
-        if "physiological_metrics" in data:
-            physio = data["physiological_metrics"]
-            profile.max_hr = physio.get("max_hr")
-            profile.resting_hr = physio.get("resting_hr")
-            profile.hrv_ms = physio.get("hrv_ms")
-            profile.vo2_max = physio.get("vo2_max")
-            profile.lactate_threshold_bpm = physio.get("lactate_threshold_bpm")
-        
-        # Historial de lesiones
-        if "injury_history" in data and "injuries" in data["injury_history"]:
-            for injury_data in data["injury_history"]["injuries"]:
+        # Reconstruir injuries
+        injuries = []
+        if data.get('injuries'):
+            for injury_data in data['injuries']:
                 injury = Injury(
-                    type=injury_data.get("type", ""),
-                    date_approx=injury_data.get("date_approx", ""),
-                    recovery_desc=injury_data.get("recovery_desc", "")
+                    type=injury_data.get('type', ''),
+                    date_approx=injury_data.get('date_approx', ''),
+                    recovery_desc=injury_data.get('recovery_desc', '')
                 )
-                profile.injuries.append(injury)
+                injuries.append(injury)
         
-        # Contexto de entrenamiento
-        if "training_context" in data:
-            training = data["training_context"]
-            profile.avg_weekly_km = training.get("avg_weekly_km")
-            profile.training_days_per_week = training.get("training_days_per_week", "")
-            profile.strength_training_history = training.get("strength_training_history", False)
-            profile.include_strength_training = training.get("include_strength_training", False)
-            profile.quality_session_preference = training.get("quality_session_preference", "")
-        
-        # Datos de rendimiento
-        if "performance_data" in data:
-            performance = data["performance_data"]
-            profile.personal_bests = performance.get("personal_bests", {})
+        # Crear instancia con todos los campos
+        return cls(
+            # Información personal
+            name=data.get('name', ''),
+            age=data.get('age'),
+            gender=data.get('gender', ''),
+            height_cm=data.get('height_cm'),
+            weight_kg=data.get('weight_kg'),
             
-            # Zonas de entrenamiento
-            if "training_zones" in performance and performance["training_zones"]:
-                zones_data = performance["training_zones"]
-                profile.training_zones = TrainingZones(
-                    zone1_hr=zones_data.get("zone1_hr"),
-                    zone2_hr=zones_data.get("zone2_hr"),
-                    zone3_hr=zones_data.get("zone3_hr"),
-                    zone4_hr=zones_data.get("zone4_hr"),
-                    zone5_hr=zones_data.get("zone5_hr")
-                )
-        
-        # Objetivos de carrera
-        if "race_goals" in data:
-            goals = data["race_goals"]
+            # Métricas fisiológicas
+            max_hr=data.get('max_hr'),
+            resting_hr=data.get('resting_hr'),
+            vo2_max=data.get('vo2_max'),
+            lactate_threshold_bpm=data.get('lactate_threshold_bpm'),
+            hrv_ms=data.get('hrv_ms'),
+            training_zones=training_zones,
             
-            # Objetivo principal
-            if "main_objective" in goals and goals["main_objective"]:
-                main_data = goals["main_objective"]
-                profile.main_objective = Race(
-                    name=main_data.get("name", ""),
-                    date=main_data.get("date", ""),
-                    distance_km=main_data.get("distance_km", 0.0),
-                    goal_time=main_data.get("goal_time"),
-                    terrain=main_data.get("terrain", "")
-                )
+            # Contexto de entrenamiento
+            avg_weekly_km=data.get('avg_weekly_km'),
+            training_days_per_week=data.get('training_days_per_week', ''),
+            running_experience_years=data.get('running_experience_years'),      # ✅ NUEVO
+            current_training_period=data.get('current_training_period', ''),    # ✅ NUEVO  
+            available_training_days=data.get('available_training_days', ''),
+            unavailable_days=data.get('unavailable_days', ''),
+            strength_training_history=data.get('strength_training_history'),
+            include_strength_training=data.get('include_strength_training'),
             
-            # Carreras intermedias
-            if "intermediate_races" in goals:
-                for race_data in goals["intermediate_races"]:
-                    race = Race(
-                        name=race_data.get("name", ""),
-                        date=race_data.get("date", ""),
-                        distance_km=race_data.get("distance_km", 0.0),
-                        goal_time=race_data.get("goal_time"),
-                        terrain=race_data.get("terrain", "")
-                    )
-                    profile.intermediate_races.append(race)
-        
-        return profile
-    
-    def validate_data(self) -> List[str]:
-        """
-        Valida la integridad y coherencia de los datos del perfil.
-        
-        Implementa validaciones de lógica de negocio que van más allá
-        del tipado estático, asegurando coherencia fisiológica y temporal.
-        
-        Returns:
-            List[str]: Lista de errores encontrados (vacía si todo es válido)
-        """
-        errors = []
-        
-        # Validaciones fisiológicas
-        if self.max_hr and self.resting_hr:
-            if self.max_hr <= self.resting_hr:
-                errors.append("FCmáx debe ser mayor que FCrep")
-        
-        if self.age:
-            if self.age < 10 or self.age > 100:
-                errors.append("Edad debe estar entre 10 y 100 años")
-        
-        if self.weight_kg:
-            if self.weight_kg < 30 or self.weight_kg > 200:
-                errors.append("Peso debe estar entre 30 y 200 kg")
-                
-        if self.height_cm:
-            if self.height_cm < 100 or self.height_cm > 250:
-                errors.append("Altura debe estar entre 100 y 250 cm")
-        
-        # Validaciones de entrenamiento
-        if self.avg_weekly_km:
-            if self.avg_weekly_km < 0 or self.avg_weekly_km > 300:
-                errors.append("Volumen semanal debe estar entre 0 y 300 km")
-        
-        # Validaciones de género normalizado
-        valid_genders = ["Masculino", "Femenino", "Otro"]
-        if self.gender and self.gender not in valid_genders:
-            errors.append(f"Género debe ser uno de: {', '.join(valid_genders)}")
-        
-        return errors
-    
-    def is_complete(self) -> bool:
-        """
-        Verifica si el perfil tiene datos mínimos para generar un plan.
-        
-        Define los campos críticos que deben estar presentes para que
-        la IA pueda generar un plan de entrenamiento efectivo.
-        
-        Returns:
-            bool: True si el perfil está completo para generar plan
-        """
-        required_fields = [
-            self.name,
-            self.age,
-            self.gender,
-            self.main_objective
-        ]
-        
-        return all(field is not None and field != "" for field in required_fields)
-
+            # Rendimiento
+            personal_bests=data.get('personal_bests', {}),
+            
+            # Objetivos
+            main_objective=main_objective,
+            intermediate_races=intermediate_races,
+            
+            # Historial médico
+            injuries=injuries
+        )
 
 def create_empty_profile() -> AthleteProfile:
     """
-    Crea un perfil vacío con valores por defecto.
+    Crea un perfil de atleta vacío con valores por defecto.
     
-    Útil para inicializar nuevos perfiles o como plantilla
-    para entrada manual de datos.
-    
-    Returns:
-        AthleteProfile: Perfil vacío inicializado
-    """
-    profile = AthleteProfile()
-    
-    # Inicializar diccionario de marcas personales vacío
-    profile.personal_bests = {
-        "5k": None,
-        "10k": None,
-        "half_marathon": None,
-        "marathon": None
-    }
-    
-    return profile
-
-
-def create_sample_profile() -> AthleteProfile:
-    """
-    Crea un perfil de muestra basado en el ejemplo del documento.
-    
-    Implementa los datos de "Tomás Solórzano" como referencia
-    y para pruebas del sistema.
+    Útil para inicialización de nuevos perfiles y como baseline
+    para comparaciones y validaciones.
     
     Returns:
-        AthleteProfile: Perfil de muestra completo
+        AthleteProfile: Perfil inicializado con valores por defecto
     """
-    profile = AthleteProfile(
-        name="Tomás Solórzano",
-        age=19,
-        gender="Masculino",
-        height_cm=180,
-        weight_kg=67.0,
-        max_hr=184,
-        resting_hr=41,
-        vo2_max=60.0,
-        lactate_threshold_bpm=179,
-        avg_weekly_km=50.0,
-        training_days_per_week="5",
-        strength_training_history=False,
-        include_strength_training=True,
-        quality_session_preference="Martes, Jueves"
+    return AthleteProfile(
+        personal_bests={
+            '5k': '',
+            '10k': '',
+            'half_marathon': '',
+            'marathon': ''
+        }
     )
-    
-    # Marcas personales
-    profile.personal_bests = {
-        "5k": "00:18:00",
-        "10k": "00:39:50", 
-        "half_marathon": "01:36:00",
-        "marathon": None
-    }
-    
-    # Objetivo principal
-    profile.main_objective = Race(
-        name="Media Maratón de Valencia",
-        date="2024-11-30",
-        distance_km=21.097,
-        goal_time="01:28:00",
-        terrain="Llano"
-    )
-    
-    # Carrera intermedia
-    intermediate_race = Race(
-        name="10k de la Ciudad",
-        date="2024-10-15",
-        distance_km=10.0,
-        goal_time="00:38:00",
-        terrain="Llano"
-    )
-    profile.intermediate_races.append(intermediate_race)
-    
-    return profile

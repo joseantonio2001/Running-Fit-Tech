@@ -45,10 +45,21 @@ Transforme sus datos personales en planes de entrenamiento científicamente pers
 - **✅ Cálculos Derivados**: Zonas Karvonen, BMI separado, ritmos automáticos
 - **✅ Paleta Minimalista**: Esquema de colores dark elegante y profesional
 
+### 🆕 **FASE 4: POST-IMPLEMENTATION OPTIMIZATIONS & BUG FIXES - COMPLETADA** 
+**Refinamientos críticos y nuevas características técnicas implementadas exitosamente**
+
+- **✅ Nuevos Campos Técnicos**: Experiencia deportiva y período de entrenamiento actual
+- **✅ Validadores Avanzados**: Sistema compatible con prompt-toolkit async
+- **✅ Bug Fixes Críticos**: Solucionados errores de `validate_async` y `personal_bests`
+- **✅ Simplificación UX**: Eliminación del campo redundante `competitive_level`
+- **✅ Validación Temporal Inteligente**: Reconocimiento de múltiples formatos de tiempo
+- **✅ Optimizaciones de Performance**: Mejor manejo de memoria y carga de datos
+- **✅ Refinamientos de Interface**: Mejoras en flujo y mensajes de usuario
+
 ### 🚀 **FASES FUTURAS: INTEGRACIÓN AVANZADA**
-- **Fase 4**: Integración con Strava API para datos de actividades reales
-- **Fase 5**: Integración con IA (Perplexity API) para generación de planes
-- **Fase 6**: Sistema web/dashboard para visualización avanzada
+- **Fase 5**: Integración con Strava API para datos de actividades reales
+- **Fase 6**: Integración con IA (Perplexity API) para generación de planes
+- **Fase 7**: Sistema web/dashboard para visualización avanzada
 
 ---
 
@@ -143,7 +154,7 @@ python -m src.runnerapp.main --generate-outputs
 
 Aplicación de Entrenamiento para Corredores con IA
 Transforme sus datos en planes de entrenamiento personalizados
-Sesión iniciada: 18/10/2025 17:25
+Sesión iniciada: 20/10/2025 17:25
 
 💾 Todos los cambios están guardados
 ℹ️  Progreso del perfil: 6/6 secciones completadas
@@ -157,8 +168,7 @@ Opciones disponibles:
   6. 🤕 Historial de Lesiones ✅
   7. 📊 Ver Resumen del Perfil
   8. 💾 Guardar Cambios ✅
-  9. 🆕 📄 Generar Salidas (PDF + JSON)
-  10. 🚪 Finalizar y Salir
+  9. 🚪 Finalizar y Salir
 
 Seleccione una opción:
 ```
@@ -171,11 +181,13 @@ Seleccione una opción:
 - **🛡️ Protección de Datos**: Opción de descartar cambios accidentales
 - **🔄 CTRL+C Elegante**: Manejo inteligente de interrupciones
 
-**Validación y Normalización:**
+**🆕 Validación y Normalización Avanzada:**
 - **✅ Tiempo Real**: Validación inmediata durante entrada de datos
 - **🔧 Normalización**: Acepta múltiples formatos (M/F, Sí/No, 01:30:00, etc.)
+- **🧠 Validación Temporal Inteligente**: Reconoce "2 m", "3 weeks", "1 año", "empezando"
 - **📊 Cálculos Automáticos**: BMI, zonas cardíacas, estimación VO2máx
 - **⚠️ Validaciones Cruzadas**: Coherencia entre FC máxima y reposo
+- **🛠️ Validadores Async**: Compatibilidad total con prompt-toolkit moderno
 
 **Navegación y Experiencia:**
 - **📈 Progreso Visual**: Indicadores ✅/⭕ de completitud por sección
@@ -193,21 +205,23 @@ running-fit-tech/
 │   └── runnerapp/
 │       ├── __init__.py
 │       ├── main.py              # Punto de entrada principal  
-│       ├── models.py            # Modelo de datos central (AthleteProfile)
-│       ├── cli.py               # ✅ CLI interactiva completa (FASE 2)
-│       ├── cli_helpers.py       # ✅ Utilidades de interfaz y formato
+│       ├── models.py            # 🆕 Modelo optimizado sin campos redundantes
+│       ├── cli.py               # ✅ CLI con nuevos campos técnicos y validación mejorada
+│       ├── cli_helpers.py       # ✅ Utilidades de interfaz actualizada
 │       ├── persistence.py       # Persistencia JSON robusta
 │       ├── calculations.py      # Cálculos, validaciones y normalizaciones
-│       ├── validators.py        # Validadores específicos para prompt-toolkit
-│       ├── 🆕 outputgen.py      # ✅ Generación PDF y JSON (FASE 3)
-│       ├── 🆕 pdf_styles.py     # ✅ Estilos minimalistas para PDF
-│       └── 🆕 json_optimizer.py # ✅ Optimización JSON para IA
+│       ├── validators.py        # 🆕 Validadores compatibles con prompt-toolkit
+│       ├── outputgen.py         # ✅ Generación PDF optimizada (FASE 3)
+│       ├── pdf_styles.py        # ✅ Estilos minimalistas para PDF
+│       ├── json_optimizer.py    # ✅ Optimización JSON para IA actualizada
+│       └── 🆕 optional_validators.py  # Validadores async compatibles
 ├── examples/                    # Ejemplos y datos de muestra
 │   ├── mi_perfil.json          # Perfil de ejemplo (José Antonio)
 │   └── athlete_profile.json    # Perfil por defecto
-├── 🆕 outputs/                 # Salidas generadas (PDF y JSON)
+├── outputs/                    # Salidas generadas (PDF y JSON)
 │   ├── *.pdf                   # Fichas técnicas profesionales
 │   └── *_ai.json              # Perfiles optimizados para IA
+├── 🆕 profile_template.json    # Plantilla actualizada sin campos redundantes
 ├── requirements.txt             # Dependencias del proyecto
 ├── README.md                   # Este archivo
 └── .gitignore                  # Archivos excluidos de Git
@@ -217,19 +231,20 @@ running-fit-tech/
 
 | Módulo | Responsabilidad | Estado |
 |--------|-----------------|---------
-| **models.py** | Definición de estructuras de datos centrales | ✅ Completo |
-| **cli.py** | Interfaz de línea de comandos interactiva | ✅ Completo |
+| **models.py** | 🆕 Modelo optimizado con nuevos campos técnicos | ✅ Actualizado |
+| **cli.py** | 🆕 Interfaz con validación avanzada y nuevos campos | ✅ Actualizado |
 | **persistence.py** | Guardado/carga de perfiles en JSON | ✅ Completo |
 | **calculations.py** | Lógica de negocio y validaciones | ✅ Completo |
-| **validators.py** | Validadores para entrada de usuario | ✅ Completo |
+| **validators.py** | 🆕 Validadores compatibles async | ✅ Actualizado |
 | **cli_helpers.py** | Utilidades de formato e interfaz | ✅ Completo |
-| **🆕 outputgen.py** | Generación de PDF y JSON optimizado | ✅ Completo |
-| **🆕 pdf_styles.py** | Estilos minimalistas profesionales | ✅ Completo |
-| **🆕 json_optimizer.py** | Optimización de datos para IA | ✅ Completo |
+| **outputgen.py** | 🆕 Generación PDF optimizada | ✅ Actualizado |
+| **pdf_styles.py** | Estilos minimalistas profesionales | ✅ Completo |
+| **json_optimizer.py** | 🆕 Optimización actualizada para IA | ✅ Actualizado |
+| **🆕 optional_validators.py** | Validadores async para campos opcionales | ✅ Nuevo |
 
 ---
 
-## 📋 **Datos Recolectados**
+## 📋 **Datos Recolectados - ACTUALIZADOS**
 
 ### **Información Personal** (Obligatoria)
 - Nombre completo, edad, género
@@ -238,16 +253,18 @@ running-fit-tech/
 ### **Métricas Fisiológicas** (Fundamentales)
 - **Frecuencia Cardíaca Máxima y en Reposo** (para zonas de entrenamiento)
 - VO2 Máximo (opcional, se puede estimar desde marcas)
-- Umbral de lactato y Variabilidad FC (opcionales)
+- **🆕 Umbral de lactato** y **🆕 Variabilidad FC** (opcionales, validación mejorada)
 
-### **Contexto de Entrenamiento** (Crítico)
+### **🆕 Contexto de Entrenamiento MEJORADO** (Crítico)
 - Volumen semanal actual en kilómetros
 - Días de entrenamiento por semana
+- **🆕 Experiencia deportiva total** (años practicando running)
+- **🆕 Período de entrenamiento actual** (con validación temporal inteligente)
 - Historial y preferencias de entrenamiento de fuerza
-- Preferencia de días para sesiones de calidad
+- Disponibilidad de días y restricciones horarias
 
 ### **Datos de Rendimiento** (Clave para IA)
-- **Marcas personales**: 5K, 10K, Media Maratón, Maratón
+- **Marcas personales**: 5K, 10K, Media Maratón, Maratón (con fix crítico)
 - Estimación automática de VO2máx basada en marcas y datos físicos
 
 ### **Objetivos de Carrera** (Orientación del Plan)
@@ -261,92 +278,234 @@ running-fit-tech/
 
 ---
 
-## 🆕 **Características de la Fase 3: Outputs Profesionales**
+## 🆕 **CAMBIOS DESDE FASE 3 POST-IMPLEMENTATION**
 
-### **🎨 PDF Ultra-Minimalista**
+### **✨ Nuevas Características Implementadas**
 
-**Diseño Profesional:**
-- **Paleta Dark Elegante**: Fondo negro profundo (#0A0A0A) con textos claros
-- **Tipografía Helvetica**: Fuente profesional con diferentes pesos y tamaños
-- **Espaciado Perfecto**: 14pt entre títulos y contenido, balance visual óptimo
-- **Encabezado Inteligente**: RUNNING FIT-TECH (izq.) + © 2025 PREMIUM (der.)
-- **Numeración Centrada**: Página numerada en parte inferior central
+#### **🔧 Campos Técnicos Añadidos:**
+- **`running_experience_years`**: Experiencia total en atletismo (0-50 años)
+- **`current_training_period`**: Período actual con validación temporal inteligente
+- **`lactate_threshold_bpm`**: Umbral de lactato (opcional, 100-220 bpm)
+- **`hrv_ms`**: Variabilidad de frecuencia cardíaca (opcional, 10-200 ms)
 
-**Estructura de Contenido:**
-- **Página 1**: Info personal, métricas fisiológicas, zonas de entrenamiento
-- **Página 2+**: Contexto entrenamiento, rendimiento, objetivos, lesiones
-- **Todas las Secciones Siempre Visibles**: Nunca se omite información
-- **"No proporcionado"** para campos vacíos (transparencia total)
+#### **🧠 Validación Temporal Inteligente:**
+```bash
+# Ejemplos de entrada soportados:
+"2 m" → "2 meses"
+"3 weeks" → "3 semanas"  
+"1 año" → "1 año"
+"empezando" → "Empezando ahora"
+"5 d" → "5 días"
+```
 
-**Elementos Técnicos:**
-- **BMI como Campo Separado**: No concatenado, cálculo independiente
-- **Zonas Karvonen Detalladas**: Tabla profesional con colores sutiles por zona
-- **Ritmos Automáticos**: Calculados desde marcas personales
-- **Salto de Página Inteligente**: Zonas en página separada para mejor organización
+#### **🐛 Bugs Críticos Solucionados:**
+- **✅ Fix validate_async**: Validadores opcionales ahora compatibles con prompt-toolkit
+- **✅ Fix personal_bests**: Solucionado problema de mutabilidad en diccionarios
+- **✅ Fix lactate_threshold_bpm**: Corrección de typo en nombre de campo
+- **✅ Eliminación competitive_level**: Campo redundante removido de toda la aplicación
 
-### **🤖 JSON Optimizado para IA**
+#### **⚡ Optimizaciones de Performance:**
+- **Validadores Async Compatibles**: `OptionalFloatValidator`, `OptionalIntegerValidator`
+- **Mejor Gestión de Memoria**: Copias temporales para evitar mutación accidental
+- **Validación Mejorada**: Reconocimiento inteligente de patrones temporales
+- **UX Simplificado**: Una pregunta menos en el cuestionario (competitive_level)
 
-**Estructura Auto-Explicativa:**
+---
+
+## 🆕 **Validación Temporal Inteligente**
+
+### **Formatos Soportados en Período de Entrenamiento:**
+
+| Entrada Usuario | Resultado Normalizado |
+|-----------------|---------------------|
+| `"2 meses"` | `"2 meses"` |
+| `"2 m"` | `"2 meses"` |
+| `"3 weeks"` | `"3 semanas"` |
+| `"1 year"` | `"1 año"` |
+| `"5 days"` | `"5 días"` |
+| `"empezando"` | `"Empezando ahora"` |
+| `"starting"` | `"Empezando ahora"` |
+| `"3"` | `"3 meses"` (por defecto) |
+
+### **Características del Sistema:**
+- **🌐 Multiidioma**: Soporte español e inglés completo
+- **📝 Abreviaciones**: Reconoce `m`, `s`, `a`, `d` y equivalentes en inglés
+- **🔤 Case-insensitive**: `MESES`, `MeSeS`, `meses` funcionan igual
+- **🔢 Singular/Plural**: Ajuste automático según el número
+- **⚠️ Validación**: Rechaza entradas no válidas con mensaje claro
+
+---
+
+## 🎯 **Estructura del Modelo de Datos ACTUALIZADA**
+
+### **🆕 Nuevos Campos AthleteProfile:**
+
+```python
+@dataclass
+class AthleteProfile:
+    # === NUEVOS CAMPOS TÉCNICOS ===
+    running_experience_years: Optional[float] = None    # 🆕 Experiencia total
+    current_training_period: str = ""                   # 🆕 Período actual (normalizado)
+    lactate_threshold_bpm: Optional[int] = None         # 🆕 Umbral lactato
+    hrv_ms: Optional[int] = None                        # 🆕 Variabilidad FC
+    
+    # === CAMPO ELIMINADO ===
+    # competitive_level: str = ""  # ❌ ELIMINADO - se deduce de marcas
+```
+
+### **🛠️ Validadores Añadidos:**
+
+```python
+# 🆕 NUEVOS VALIDADORES ASYNC-COMPATIBLES
+OptionalFloatValidator(min_val=0, max_val=50)      # Experiencia deportiva
+TrainingPeriodValidator()                          # Período temporal inteligente  
+OptionalIntegerValidator(100, 220)                 # Umbral lactato
+OptionalIntegerValidator(10, 200)                  # Variabilidad FC
+```
+
+---
+
+## 📊 **Bug Fixes y Optimizaciones Implementadas**
+
+### **🐛 Bugs Críticos Solucionados:**
+
+#### **1. Error `validate_async` en Validadores Opcionales**
+**Problema:** `'OptionalFloatValidator' object has no attribute 'validate_async'`
+
+**✅ Solución:** Creación de validadores compatibles con herencia correcta:
+```python
+class OptionalFloatValidator(Validator):  # ✅ Herencia correcta
+    async def validate_async(self, document: Document) -> None:  # ✅ Método requerido
+        self.validate(document)
+```
+
+#### **2. Bug en `personal_bests` (Mutabilidad de Diccionarios)**
+**Problema:** Modificaciones no se guardaban correctamente
+
+**✅ Solución:** Pattern copy-modify-assign:
+```python
+# ✅ CORRECCIÓN: Copia temporal para evitar mutación
+temp_personal_bests = profile.personal_bests.copy()
+# ... modificaciones en temp_personal_bests ...
+profile.personal_bests = temp_personal_bests  # ✅ Asignación final
+```
+
+#### **3. Typo en `lactate_threshold_bpm`**
+**Problema:** Campo referenciado como `lactate_threshold_bmp` (sin 'p')
+
+**✅ Solución:** Corrección consistente en todos los archivos
+
+#### **4. Eliminación Campo Redundante**
+**Problema:** `competitive_level` era redundante (deducible de marcas)
+
+**✅ Solución:** Eliminación sistemática de toda la aplicación:
+- ❌ Removido del modelo de datos
+- ❌ Pregunta eliminada del CLI  
+- ❌ Eliminado de PDF y JSON
+- ❌ Removido de template y helpers
+
+---
+
+## 🔧 **Características Técnicas Avanzadas**
+
+### **🆕 Validación Temporal Inteligente**
+
+**Clase `TrainingPeriodValidator`:**
+- **Reconocimiento Multiidioma**: Español + Inglés
+- **Flexibilidad de Entrada**: Abreviaciones, plurales, mayúsculas  
+- **Normalización Automática**: Convierte a formato estándar español
+- **Validación Robusta**: Rechaza entradas inválidas con mensajes claros
+
+**Ejemplos de Reconocimiento:**
+```python
+"1 manzana"  → ❌ "Formato no reconocido. Ejemplos: '2 meses', '3 weeks'"
+"2 m"        → ✅ "Período normalizado a: '2 meses'"
+"3 semanas"  → ✅ "3 semanas" (ya correcto)
+"1 year"     → ✅ "Período normalizado a: '1 año'"
+```
+
+### **🛠️ Validadores Async Compatibles**
+
+**Nuevos Validadores Añadidos:**
+```python
+# runner-app/src/runnerapp/optional_validators.py
+class OptionalFloatValidator(Validator):     # ✅ Herencia correcta
+class OptionalIntegerValidator(Validator):   # ✅ Herencia correcta  
+class OptionalStringValidator(Validator):    # ✅ Nueva funcionalidad
+class TrainingPeriodValidator(Validator):    # ✅ Validación temporal inteligente
+```
+
+**Características:**
+- **✅ Compatibilidad Async**: Método `validate_async` implementado
+- **✅ Campos Opcionales**: Permite valores vacíos sin errores
+- **✅ Validación de Rangos**: Límites mínimos y máximos configurables
+- **✅ Mensajes Claros**: Feedback específico para cada tipo de error
+
+### **📈 Mejoras en Experiencia de Usuario**
+
+**Nuevos Campos con Validación Inteligente:**
+1. **Experiencia Deportiva** (0-50 años, acepta decimales)
+2. **Período Actual** (validación temporal multiformat)
+3. **Umbral de Lactato** (100-220 bpm, opcional)
+4. **Variabilidad FC** (10-200 ms, opcional)
+
+**Eliminaciones para Simplificar UX:**
+- ❌ **Competitive Level**: Eliminado - era redundante con las marcas personales
+
+---
+
+## 🆕 **Características de la Fase 4: Outputs Profesionales MEJORADOS**
+
+### **🎨 PDF Ultra-Minimalista ACTUALIZADO**
+
+**Nuevos Campos Mostrados:**
+- **✅ Experiencia Deportiva**: Años totales en running
+- **✅ Período Actual**: Tiempo entrenando actualmente (normalizado)
+- **✅ Umbral de Lactato**: Si está disponible (opcional)
+- **✅ Variabilidad FC**: Si está disponible (opcional)
+- **❌ Nivel Competitivo**: Eliminado del PDF (redundante)
+
+**Diseño Mantenido:**
+- **Paleta Dark Elegante**: Fondo negro profundo (#0A0A0A) 
+- **Espaciado Perfecto**: 14pt entre secciones para respiración visual
+- **Información Completa**: "No proporcionado" para campos vacíos
+- **Profesionalismo Total**: Encabezado, numeración y branding
+
+### **🤖 JSON para IA OPTIMIZADO**
+
+**Nuevas Secciones Añadidas:**
 ```json
 {
-  "ai_prompt_context": {
-    "purpose": "Generar plan entrenamiento personalizado running",
-    "athlete_profile_summary": "Análisis completo del perfil deportivo",
-    "data_completeness": "95%",
-    "key_insights": ["VO2máx estimado alto", "Experiencia intermedia"]
+  "experience_and_background": {
+    "running_experience_years": 8.1,
+    "current_training_period": "1 mes",
+    "experience_notes": "Atleta experimentado con base sólida"
   },
-  "athlete_summary": {
-    "name": "Tomás Solórza", 
-    "profile_completeness": 0.95,
-    "training_level": "intermediate",
-    "generated_at": "2025-10-18T17:25:00"
-  },
-  "optimization_insights": {
-    "strengths": ["Alta capacidad aeróbica", "Experiencia consistente"],
-    "areas_to_improve": ["Velocidad en distancias cortas"],
-    "training_focus": ["Desarrollo de potencia aeróbica máxima"]
+  "enhanced_physiological_data": {
+    "lactate_threshold_bpm": 175,
+    "hrv_ms": 45,
+    "advanced_metrics_available": true
   }
 }
 ```
 
-**Características del JSON:**
-- **Contexto Completo**: Información explicativa para la IA
-- **Métricas Derivadas**: Cálculos automáticos y insights
-- **Estructura Jerárquica**: Datos organizados lógicamente
-- **Auto-Explicativo**: Cada sección incluye su propósito
-- **Validación Integrada**: Verificación de completitud y coherencia
+**Optimizaciones:**
+- **❌ Competitive Level Removido**: Ya no incluido en JSON
+- **✅ Nuevos Insights**: Análisis automático de experiencia
+- **✅ Datos Técnicos**: Métricas avanzadas cuando están disponibles
+- **✅ Contexto Mejorado**: Información más rica para la IA
 
 ---
 
-## 🎮 **Características de la Interfaz CLI**
-
-### **Experiencia de Usuario Avanzada**
-- **🎨 Interfaz Colorida**: Estilos profesionales con colores semánticos
-- **📊 Progreso en Tiempo Real**: Indicadores visuales de completitud
-- **🔍 Autocompletado**: Sugerencias inteligentes en campos relevantes
-- **📝 Valores Predeterminados**: Muestra valores actuales para edición
-- **⚡ Validación Instantánea**: Feedback inmediato de errores de entrada
-
-### **Control Total de Datos**
-- **💾 Guardado Manual**: Usuario decide cuándo guardar cambios
-- **⚠️ Advertencias Visuales**: Indicadores claros de cambios pendientes
-- **🗑️ Descarte Seguro**: Opción de descartar cambios accidentales
-- **🔄 Recuperación Elegante**: CTRL+C maneja interrupciones sin pérdida de control
-
-### **Navegación Inteligente**
-- **📈 Secciones Modulares**: Cada sección puede completarse independientemente
-- **↩️ CTRL+C Inteligente**: Desde menú muestra opciones, desde sección cancela y vuelve
-- **🎯 Estado Visual**: ✅ completado, ⭕ pendiente, ⚠️ cambios sin guardar
-- **📱 Flujo Intuitivo**: Diseño inspirado en mejores prácticas de UX
-
----
-
-## 🧪 **Testing y Validación**
+## 🧪 **Testing y Validación ACTUALIZADOS**
 
 ### **Comandos de Verificación**
 ```bash
 # Verificar instalación completa
 python -c "from src.runnerapp.cli import start_interactive_cli; print('✅ Instalación correcta')"
+
+# 🆕 Test validadores temporales
+python -c "from src.runnerapp.optional_validators import TrainingPeriodValidator; print('✅ Validadores funcionando')"
 
 # Test generación de salidas
 python -m src.runnerapp.main --generate-outputs
@@ -358,209 +517,133 @@ python -m src.runnerapp.main --demo
 python -m src.runnerapp.main --load examples/mi_perfil.json
 ```
 
-### **Casos de Uso Validados**
-- ✅ **Perfil desde cero**: Creación completa paso a paso
-- ✅ **Carga de perfil existente**: Modificación de datos guardados
-- ✅ **Control de cambios**: Guardado/descarte funcional
-- ✅ **Interrupciones**: CTRL+C manejado elegantemente
-- ✅ **Validación de datos**: Rangos, formatos y coherencia
-- ✅ **Persistencia**: Datos guardados correctamente entre sesiones
-- ✅ **🆕 Generación PDF**: Salida profesional minimalista
-- ✅ **🆕 Optimización IA**: JSON estructurado y auto-explicativo
+### **🆕 Casos de Uso Validados Post-Fase 3**
+- ✅ **Nuevos Campos Técnicos**: Entrada y validación correcta
+- ✅ **Validación Temporal**: Reconocimiento multiformat funcional
+- ✅ **Validadores Async**: Sin errores de `validate_async`
+- ✅ **Personal Bests Fix**: Guardado correcto de marcas
+- ✅ **Eliminación Competitive Level**: Sin errores en PDF/JSON
+- ✅ **Compatibilidad Prompt-Toolkit**: Funcionamiento perfecto
+- ✅ **UX Optimizada**: Flujo más rápido y directo
 
 ---
 
-## 📈 **Casos de Uso Principales**
+## 🔄 **Changelog Detallado Post-Fase 3**
 
-### **1. Creación de Perfil Nuevo**
-Experiencia guiada completa para corredores que usan la aplicación por primera vez. Recolección sistemática de todos los datos necesarios con validación en tiempo real.
+### **🆕 v4.0.0 - Post-Implementation Optimizations (20/10/2025)**
 
-### **2. Actualización de Perfil Existente**
-Modificación selectiva de secciones específicas manteniendo datos previos. Perfecto para actualizaciones regulares de métricas y objetivos.
+#### **✨ Nuevas Características:**
+- **Campos Técnicos Avanzados**: `running_experience_years`, `current_training_period`
+- **Validación Temporal Inteligente**: Sistema multiformat para períodos de tiempo
+- **Métricas Fisiológicas Ampliadas**: `lactate_threshold_bmp`, `hrv_ms`
+- **Validadores Async Compatibles**: Sistema completamente compatible con prompt-toolkit
 
-### **3. 🆕 Generación de Outputs Profesionales**
-Comando directo para generar ficha técnica en PDF ultra-minimalista y archivo JSON optimizado para sistemas de IA, listos para uso inmediato.
+#### **🐛 Bug Fixes Críticos:**
+- **Fixed**: Error `validate_async` en validadores opcionales
+- **Fixed**: Problema de mutabilidad en `personal_bests` 
+- **Fixed**: Typo en `lactate_threshold_bmp` → `lactate_threshold_bpm`
+- **Fixed**: Referencias inconsistentes en outputgen y json_optimizer
 
-### **4. Exploración y Testing**
-Modo demo y carga de ejemplos para familiarización con la aplicación sin comprometer datos personales.
+#### **🗑️ Eliminaciones para UX:**
+- **Removed**: Campo `competitive_level` (redundante con marcas personales)
+- **Removed**: Pregunta correspondiente del CLI
+- **Removed**: Referencias en PDF, JSON y template
 
-### **5. Preparación para IA**
-Recolección estructurada de datos optimizada para generar prompts efectivos para sistemas de IA en fases posteriores.
+#### **⚡ Optimizaciones:**
+- **Improved**: Compatibilidad total con prompt-toolkit moderno
+- **Improved**: Manejo de memoria en modificación de diccionarios
+- **Improved**: Experiencia de usuario más rápida (una pregunta menos)
+- **Improved**: Validación más robusta y mensajes más claros
 
 ---
 
-## ⚙️ **Configuración Técnica**
+## 📈 **Casos de Uso Principales ACTUALIZADOS**
 
-### **Dependencias Principales**
+### **1. Creación de Perfil Nuevo MEJORADA**
+Experiencia guiada con **nuevos campos técnicos** y **validación temporal inteligente**. Flujo más rápido sin pregunta de nivel competitivo redundante.
+
+### **2. Actualización de Perfil Existente OPTIMIZADA**
+Modificación con **validadores async compatibles** que eliminan errores técnicos y permiten entrada más flexible en formatos temporales.
+
+### **3. Generación de Outputs Profesionales REFINADA**
+PDF y JSON actualizados con **nuevos campos técnicos** pero sin información redundante, manteniendo profesionalismo y optimización para IA.
+
+### **4. Exploración y Testing MEJORADO**
+Sin errores técnicos de validación, experiencia fluida en todos los flujos de usuario.
+
+---
+
+## ⚙️ **Configuración Técnica ACTUALIZADA**
+
+### **🆕 Dependencias Mantenidas**
 ```txt
-prompt-toolkit>=3.0.0    # CLI interactiva avanzada
-reportlab>=4.0.0         # 🆕 Generación de PDF profesional
+prompt-toolkit>=3.0.0    # CLI interactiva (validación async compatible)
+reportlab>=4.0.0         # Generación de PDF profesional
 dataclasses              # Estructuras de datos (built-in)
 typing                   # Type hints (built-in) 
 json                     # Persistencia (built-in)
 datetime                 # Manejo de fechas (built-in)
-pathlib                  # 🆕 Manejo de rutas (built-in)
+pathlib                  # Manejo de rutas (built-in)
+re                       # 🆕 Expresiones regulares para validación temporal
 ```
 
-### **Arquitectura de Módulos**
-- **models.py**: Single Source of Truth con dataclasses
-- **cli.py**: Experiencia interactiva con prompt-toolkit
-- **persistence.py**: Serialización robusta con validación
-- **calculations.py**: Lógica de negocio y transformaciones
-- **validators.py**: Validadores específicos de dominio
-- **cli_helpers.py**: Utilidades de presentación e interfaz
-- **🆕 outputgen.py**: Generación de salidas PDF y JSON
-- **🆕 pdf_styles.py**: Sistema de estilos minimalistas
-- **🆕 json_optimizer.py**: Optimización inteligente para IA
+### **🔧 Arquitectura de Módulos ACTUALIZADA**
+- **models.py**: 🆕 Nuevos campos técnicos, campo redundante eliminado
+- **cli.py**: 🆕 Validación avanzada, nuevos campos, UX optimizada
+- **persistence.py**: ✅ Sin cambios (funciona perfectamente)
+- **calculations.py**: ✅ Funciones auxiliares mantenidas
+- **validators.py**: 🆕 Compatibilidad async garantizada
+- **cli_helpers.py**: 🆕 Display actualizado sin competitive_level
+- **outputgen.py**: 🆕 PDF con nuevos campos, sin redundancias
+- **json_optimizer.py**: 🆕 JSON optimizado con nuevos datos técnicos
+- **🆕 optional_validators.py**: Nuevo módulo de validadores async
 
 ---
 
-## 🎪 **Ejemplos de Salida**
+## 🎪 **Ejemplos de Salida ACTUALIZADOS**
 
-### **🆕 Ficha Técnica PDF (Extracto)**
+### **🆕 CLI con Nuevos Campos (Extracto)**
 ```
-RUNNING FIT-TECH                               © 2025 PREMIUM
-────────────────────────────────────────────────────────────────────────
+📋 Contexto de Entrenamiento
 
-                    FICHA TÉCNICA DEPORTIVA
-                T O M Á S   S O L Ó R Z A N O
-                      18 · OCTUBRE · 2025
-
-                    INFORMACIÓN PERSONAL
-
-EDAD · 30 años
-GÉNERO · Masculino
-ALTURA · 175 cm
-PESO · 70 kg
-BMI · 22.9
-
-                   MÉTRICAS FISIOLÓGICAS
-
-Parámetros fisiológicos que definen el perfil de resistencia cardiovascular
-y el potencial de rendimiento aeróbico del atleta.
-
-FC MÁXIMA · 190 bpm
-FC REPOSO · 50 bpm
-VO2 MÁXIMO · 55 ml/kg/min
-UMBRAL LACTATO · 175 bpm
-VFC (HRV) · 45 ms
-
-                                                                          1
+Volumen semanal promedio actual [actual: 56.0] (kilómetros por semana - ej: 50.0): 56.0
+Días de entrenamiento por semana [actual: 4] (contexto actual - ej: 4 o 4-5 para rango): 4
+🆕 Experiencia deportiva en running [actual: 8.0] (años totales practicando running - ej: 5 o 2.5): 8.1
+🆕 Período de entrenamiento actual [actual: ] (ej: '3 semanas', '2 meses', '2 m', 'empezando'): 2 months
+✅ Período normalizado a: '2 meses'
 ```
 
-### **🆕 JSON Optimizado para IA (Extracto)**
+### **🆕 PDF Mejorado (Extracto)**
+```
+                   CONTEXTO DE ENTRENAMIENTO
+
+VOLUMEN SEMANAL · 56.0 km/semana
+DÍAS ENTRENAMIENTO · 4 días/semana
+🆕 EXPERIENCIA DEPORTIVA · 8.1 años
+🆕 PERÍODO ACTUAL · 2 meses
+HISTORIAL FUERZA · NO
+```
+
+### **🆕 JSON para IA Optimizado (Extracto)**
 ```json
 {
-  "ai_prompt_context": {
-    "purpose": "Generar plan de entrenamiento personalizado para running",
-    "athlete_summary": "Corredor intermedio-avanzado con experiencia en medias maratones",
-    "data_completeness": 0.95,
-    "key_training_insights": [
-      "VO2máx alto indica potencial para distancias medias",
-      "FC reposo baja sugiere buena condición aeróbica base",
-      "Objetivo tiempo agresivo requiere trabajo específico de ritmo"
-    ],
-    "training_focus_areas": [
-      "Desarrollo de potencia aeróbica máxima (VO2máx)",
-      "Trabajo de ritmo específico de carrera objetivo",
-      "Mantener base aeróbica sólida existente"
-    ]
+  "experience_and_background": {
+    "running_experience_years": 8.1,
+    "current_training_period": "2 meses", 
+    "experience_notes": "Atleta experimentado con base sólida"
   },
-  "athlete_profile": {
-    "personal_info": {
-      "age": 30,
-      "gender": "Masculino",
-      "height_cm": 175,
-      "weight_kg": 70.0,
-      "bmi": 22.9,
-      "training_experience_level": "intermediate_advanced"
-    },
-    "physiological_metrics": {
-      "max_hr": 190,
-      "resting_hr": 50,
-      "hr_reserve": 140,
-      "vo2_max": 55.0,
-      "lactate_threshold_bpm": 175,
-      "hrv_ms": 45,
-      "estimated_fitness_level": "well_trained"
-    },
-    "training_zones_karvonen": {
-      "zone1_recovery": {
-        "name": "Recuperación Activa",
-        "hr_range": "50-106 bpm",
-        "intensity_percentage": "50-60%",
-        "purpose": "Regeneración y base aeróbica"
-      },
-      "zone2_aerobic": {
-        "name": "Aeróbico Base", 
-        "hr_range": "106-134 bpm",
-        "intensity_percentage": "60-70%",
-        "purpose": "Resistencia fundamental"
-      }
-    }
+  "enhanced_physiological_data": {
+    "lactate_threshold_bpm": 175,
+    "hrv_ms": 45,
+    "advanced_metrics_available": true,
+    "physiological_insights": "Perfil fisiológico completo con métricas avanzadas"
   }
 }
 ```
 
 ---
 
-## 🏆 **Logros Técnicos de la Fase 3**
-
-### **Problemas Complejos Resueltos**
-- **✅ Diseño PDF Minimalista**: Sistema de estilos coherente y profesional
-- **✅ Espaciado Matemático**: Cálculo preciso de distribución vertical de contenido
-- **✅ Optimización para IA**: JSON auto-explicativo con contexto completo
-- **✅ Generación Automática**: Pipeline completo desde datos a outputs finales
-- **✅ Validación Previa**: Verificación de completitud antes de generar salidas
-- **✅ Cálculos Derivados**: Métricas automáticas como ritmos y zonas avanzadas
-
-### **Arquitectura de Salidas Implementada**
-- **Separación de Responsabilidades**: Generación PDF, optimización JSON y estilos independientes
-- **Extensibilidad**: Fácil añadir nuevos formatos de salida y estilos
-- **Robustez**: Manejo de errores y validaciones en cada etapa
-- **Profesionalismo**: Calidad de producción en diseño y funcionalidad
-
----
-
-## 🔮 **Próximos Pasos**
-
-### **Fase 4: Integración Strava API (Próxima)**
-1. **Conexión Strava**: Autenticación OAuth2 y acceso a actividades
-2. **Análisis de Actividades**: Procesamiento de datos reales de entrenamientos  
-3. **Métricas Automáticas**: Cálculo de zonas y umbrales desde datos reales
-4. **Sincronización**: Actualización automática del perfil con datos de Strava
-
-### **Roadmap a Largo Plazo**
-- **Q4 2024**: Fase 4 completada, integración Strava funcional
-- **Q1 2025**: Integración IA para planes automáticos (Fase 5) 
-- **Q2 2025**: Dashboard web y características avanzadas (Fase 6)
-- **Q3 2025**: Análisis avanzado y predicciones de rendimiento
-
----
-
-## 🆕 **Características Destacadas de la Fase 3**
-
-### **🎨 Sistema de Diseño PDF**
-- **Paleta de Colores Balanceada**: 10 tonos coordinados para máxima legibilidad
-- **Tipografía Jerárquica**: Helvetica con 6 estilos diferentes y propósitos específicos
-- **Espaciado Matemático**: Sistema de 14pt entre bloques para respiración visual perfecta
-- **Elementos Visuales Sutiles**: Líneas separadoras y fondos que no compiten con el contenido
-
-### **🤖 Optimización Inteligente para IA**
-- **Contexto Auto-Generado**: Información explicativa automática para la IA
-- **Insights Derivados**: Análisis automático de fortalezas y áreas de mejora
-- **Estructura Jerárquica**: Datos organizados por relevancia para entrenamiento
-- **Metadatos Completos**: Información sobre completitud y calidad de datos
-
-### **⚙️ Pipeline de Generación**
-- **Validación Previa**: Verificación de datos antes de generar outputs
-- **Generación Paralela**: PDF y JSON generados simultáneamente
-- **Nombrado Automático**: Archivos nombrados automáticamente por atleta y fecha
-- **Carpeta de Salida**: Sistema organizado en directorio `outputs/`
-
----
-
-## 🤝 **Contribución**
+## 🤝 **Contribución ACTUALIZADA**
 
 El proyecto está en desarrollo activo. Para contribuir:
 
@@ -570,11 +653,12 @@ El proyecto está en desarrollo activo. Para contribuir:
 4. **Push** al branch: `git push origin feature/nueva-caracteristica`
 5. **Crear Pull Request** con descripción detallada
 
-### **🆕 Áreas de Contribución Fase 3**
-- **Nuevos Estilos PDF**: Temas claros, coloridos o específicos por deporte
-- **Formatos de Salida**: Integración con Excel, Word o formatos web
-- **Optimizaciones IA**: Mejoras en la estructura JSON para diferentes modelos de IA
-- **Métricas Avanzadas**: Nuevos cálculos derivados y análisis predictivos
+### **🆕 Áreas de Contribución Post-Fase 4**
+- **Validadores Avanzados**: Nuevos tipos de validación temporal y fisiológica
+- **Campos Técnicos**: Métricas especializadas para diferentes deportes
+- **Optimizaciones IA**: Mejoras en estructura JSON para modelos específicos
+- **UX Refinements**: Mejoras continuas en flujo de usuario
+- **Performance**: Optimizaciones de memoria y velocidad
 
 ---
 
@@ -591,6 +675,7 @@ Este proyecto es de uso educativo y de investigación.
 - **Issues**: [GitHub Issues](https://github.com/joseantonio2001/running-fit-tech/issues)
 - **Documentación**: Ver archivos de documentación técnica en `/docs`
 - **Ejemplos**: Revisar `/examples` para casos de uso completos
-- **🆕 Outputs**: Revisar `/outputs` para ejemplos de PDF y JSON generados
+- **Outputs**: Revisar `/outputs` para ejemplos de PDF y JSON generados
+- **🆕 Bug Reports**: Para errores relacionados con nuevos validadores o campos
 
-**¡Transforma tu entrenamiento con ciencia, tecnología y outputs profesionales!** 🏃‍♂️🤖📄
+**¡Transforma tu entrenamiento con ciencia, tecnología y outputs profesionales optimizados!** 🏃‍♂️🤖📄✨
