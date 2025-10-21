@@ -361,7 +361,8 @@ class AthleteProfile:
                 injury = Injury(
                     type=injury_data.get('type', ''),
                     date_approx=injury_data.get('date_approx', ''),
-                    recovery_desc=injury_data.get('recovery_desc', '')
+                    recovery_desc=injury_data.get('recovery_desc', ''),
+                    current_status=injury_data.get('current_status') # Puede ser None si no está
                 )
                 injuries.append(injury)
         

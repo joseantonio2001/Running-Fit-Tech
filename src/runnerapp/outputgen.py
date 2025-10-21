@@ -811,7 +811,7 @@ def _build_balanced_race_goals_section(profile: AthleteProfile) -> list:
         distance_para = Paragraph(distance_info, PDF_STYLES['data_text'])
         content.append(distance_para)
         
-        terrain_info = f"<b>TERRENO</b> · {profile.main_objective.terrain.upper()}"
+        terrain_info = f"<b>TERRENO</b> · {profile.main_objective.terrain}"
         terrain_para = Paragraph(terrain_info, PDF_STYLES['data_text'])
         content.append(terrain_para)
         
@@ -844,7 +844,7 @@ def _build_balanced_race_goals_section(profile: AthleteProfile) -> list:
             goal_para = Paragraph(goal_detail, PDF_STYLES['race_detail'])
             content.append(goal_para)
             
-            terrain_detail = f"Terreno · {(race.terrain or 'Estándar').upper()}"
+            terrain_detail = f"Terreno · {(race.terrain or 'Estándar')}"
             terrain_para = Paragraph(terrain_detail, PDF_STYLES['race_detail'])
             content.append(terrain_para)
             
@@ -863,20 +863,20 @@ def _build_balanced_injury_history_section(profile: AthleteProfile) -> list:
     
     if profile.injuries:
         for i, injury in enumerate(profile.injuries):
-            injury_text = f"LESIÓN · {(injury.type or 'NO ESPECIFICADA').upper()}"
+            injury_text = f"<b>LESIÓN</b> · {(injury.type or 'NO ESPECIFICADA')}"
             injury_para = Paragraph(injury_text, PDF_STYLES['data_text'])
             content.append(injury_para)
             
-            date_text = f"FECHA · {injury.date_approx or 'Sin fecha registrada'}"
+            date_text = f"<b>FECHA</b> · {injury.date_approx or 'Sin fecha registrada'}"
             date_para = Paragraph(date_text, PDF_STYLES['data_text'])
             content.append(date_para)
             
-            recovery_text = f"RECUPERACIÓN · {injury.recovery_desc or 'Sin información detallada'}"
+            recovery_text = f"<b>RECUPERACIÓN</b> · {injury.recovery_desc or 'Sin información detallada'}"
             recovery_para = Paragraph(recovery_text, PDF_STYLES['data_text'])
             content.append(recovery_para)
             
             # ✅ NUEVO CAMPO - Estado actual
-            status_text = f"ESTADO ACTUAL · {(injury.current_status or 'No especificado').upper()}"
+            status_text = f"<b>ESTADO ACTUAL</b> · {(injury.current_status or 'No especificado')}"
             status_para = Paragraph(status_text, PDF_STYLES['data_text'])
             content.append(status_para)
             
