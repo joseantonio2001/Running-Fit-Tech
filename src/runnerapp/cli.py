@@ -59,6 +59,9 @@ from .cli_helpers import (
 
 from .training_period_validator import TrainingPeriodValidator, parse_training_period
 
+from .outputgen import generate_outputs, validate_profile_completeness, generate_plan_outputs
+from .ai_interface import generate_training_plan
+
 def start_interactive_cli(existing_profile: Optional[AthleteProfile] = None) -> AthleteProfile:
     """
     Inicia la CLI interactiva completa.
@@ -100,6 +103,9 @@ def start_interactive_cli(existing_profile: Optional[AthleteProfile] = None) -> 
             choice = show_main_menu(profile, has_changes)
             
             if choice in ['1', '2', '3', '4', '5', '6']:
+                # ... (Lógica existente para manejar secciones 1-6) ...
+                # (Se omite por brevedad, es idéntica a la versión anterior)
+                
                 # Ejecutar función correspondiente
                 section_functions = {
                     '1': prompt_personal_info,
@@ -109,7 +115,6 @@ def start_interactive_cli(existing_profile: Optional[AthleteProfile] = None) -> 
                     '5': prompt_race_goals,
                     '6': manage_injury_history
                 }
-                
                 section_names = {
                     '1': "Información Personal",
                     '2': "Métricas Fisiológicas",
@@ -118,42 +123,89 @@ def start_interactive_cli(existing_profile: Optional[AthleteProfile] = None) -> 
                     '5': "Objetivos de Carrera",
                     '6': "Historial de Lesiones"
                 }
-                
-                # Ejecutar función de la sección
                 updated_profile = section_functions[choice](profile)
-                
-                # Asignar resultado (puede ser perfil original si hubo CTRL+C)
                 profile = updated_profile
-                
-                # Verificar si realmente hay cambios ahora (comparando con baseline)
                 if profiles_are_different(original_profile_baseline, profile):
                     print_info("⚠️ Datos modificados - recuerde guardar los cambios")
-                
                 print_success(f"✅ Sección '{section_names[choice]}' completada")
-                
+
             elif choice == '7':
                 display_profile_summary(profile)
                 input("\nPresione Enter para continuar...")
                 
             elif choice == '8':  # Guardar cambios
-                            current_has_changes = profiles_are_different(original_profile_baseline, profile)
-                            if current_has_changes:
-                                if save_profile(profile):
-                                    print_success("✅ Cambios guardados exitosamente")
-                                    # Usa deepcopy para crear una copia independiente y actualizada
-                                    original_profile_baseline = deepcopy(profile)
-                                else:
-                                    print_error("❌ Error al guardar cambios")
-                            else:
-                                print_info("💾 No hay cambios pendientes por guardar")
-                    
-            elif choice == '9':  # Finalizar y salir
+                # ... (Lógica de guardado existente) ...
                 current_has_changes = profiles_are_different(original_profile_baseline, profile)
                 if current_has_changes:
-                    return handle_exit_with_changes_simple(profile, current_has_changes)
+                    if save_profile(profile):
+                        print_success("✅ Cambios guardados exitosamente")
+                        original_profile_baseline = deepcopy(profile)
+                    else:
+                        print_error("❌ Error al guardar cambios")
+                else:
+                    print_info("💾 No hay cambios pendientes por guardar")
+                    
+            elif choice == '9':  # Finalizar y salir
+                # --- LÓGICA DE SALIDA MODIFICADA (FASE 5) ---
+                current_has_changes = profiles_are_different(original_profile_baseline, profile)
+                
+                # 1. Manejar cambios sin guardar
+                if current_has_changes:
+                    print_warning("⚠️ Hay cambios sin guardar")
+                    if confirm_action("¿Desea guardar los cambios antes de salir?", True):
+                        if save_profile(profile):
+                            print_success("✅ Cambios guardados exitosamente")
+                            original_profile_baseline = deepcopy(profile) # Actualizar baseline
+                        else:
+                            print_error("❌ Error al guardar. Saliendo de todas formas.")
+                    else:
+                        print_info("🗑️ Cambios descartados - saliendo sin guardar")
                 else:
                     print_success("Saliendo sin cambios pendientes")
-                    return profile
+                
+                # 2. Ofrecer generación de salidas (Fase 3 y 5)
+                # (Solo si el perfil tiene nombre, si no, no hay nada que generar)
+                if profile.name:
+                    is_valid, missing = validate_profile_completeness(profile)
+                    
+                    if is_valid:
+                        # Ofrecer Ficha Técnica (Fase 3)
+                        if confirm_action("\n¿Desea generar la Ficha Técnica (PDF/JSON) ahora?", True):
+                            print_info(f"\n📄 Generando Ficha Técnica para: {profile.name}")
+                            success, pdf_path, json_path = generate_outputs(profile, "outputs")
+                            if success:
+                                print_success(f"✅ Ficha PDF generada: {pdf_path}")
+                                print_success(f"✅ Ficha JSON generada: {json_path}")
+                            else:
+                                print_error("❌ Error al generar salidas de Ficha")
+                        
+                        # --- NUEVA OFERTA (FASE 5) ---
+                        # Ofrecer Plan de IA
+                        if confirm_action("\n¿Desea conectar con la IA para generar un Plan de Entrenamiento ahora?", True):
+                            print_info(f"\n🤖 Preparando generación de plan para: {profile.name}")
+                            
+                            plan_data = generate_training_plan(profile) # Llamada a IA
+                            
+                            if plan_data:
+                                success, files = generate_plan_outputs(
+                                    plan_data['plan_markdown'],
+                                    plan_data['plan_structured'],
+                                    profile.name,
+                                    "outputs"
+                                )
+                                if success:
+                                    print_info(f"\n🚀 ¡Plan generado exitosamente en 'outputs'!")
+                                else:
+                                    print_error("❌ Error al guardar los archivos del plan.")
+                            else:
+                                print_error("❌ No se pudo generar el plan de entrenamiento desde la IA.")
+                    else:
+                        print_warning("\nPerfil incompleto. No se pueden generar salidas.")
+                        print_info("Datos faltantes: " + ", ".join(missing))
+
+                # Salir del bucle y de la función
+                return profile
+            
             else:
                 print_error("Opción no válida. Por favor, seleccione una opción del menú.")
                 
@@ -161,7 +213,8 @@ def start_interactive_cli(existing_profile: Optional[AthleteProfile] = None) -> 
             print_info("\n\nInterrupción detectada.")
             current_has_changes = profiles_are_different(original_profile_baseline, profile)
             if current_has_changes:
-                return handle_exit_with_changes_simple(profile, current_has_changes)
+                # Reutilizar la lógica de salida '9'
+                return show_main_menu(profile, current_has_changes) # Mostrar menú para opción 9
             else:
                 print_success("Saliendo sin cambios pendientes")
                 return profile

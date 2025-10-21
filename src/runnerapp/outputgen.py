@@ -1,32 +1,13 @@
 """
-Output Generation Module - ACTUALIZADO: Nuevos campos técnicos
+Output Generation Module - ACTUALIZADO: Fase 5 (Generación de Plan)
 
-✅ AÑADIDOS: Nuevos campos técnicos en PDF y JSON
-- Experiencia Deportiva (running_experience_years)
-- Período Actual (current_training_period)  
-- Nivel Competitivo (competitive_level)
+✅ AÑADIDO: Funciones para generar plan en JSON, MD, y PDF profesional
+- generate_plan_outputs(): Orquestador principal
+- save_plan_json(): Guarda datos estructurados
+- save_plan_markdown(): Guarda texto Markdown
+- generar_plan_pdf(): Renderiza MD a PDF con WeasyPrint y CSS
 
-✅ ELIMINADO: "INCLUIR FUERZA" del PDF (solo en JSON)
-✅ MANTENIDO: Toda la estética original idéntica
-✅ CORREGIDO: Nombres de campos en negrita
-✅ CORREGIDO: Sin importación circular
-✅ CORREGIDO: lactate_threshold_bpm referencia correcta
-
-Versión FINAL con FORMATO ELEGANTE DEL NOMBRE:
-- Espaciado consistente entre título de bloque y contenido
-- Espaciado balanceado entre contenido y siguiente bloque
-- Márgenes armoniosos que crean respiración visual perfecta
-- Mantiene toda la estética minimalista
-- ✅ SALTO DE PÁGINA después de tabla de Zonas de Entrenamiento
-- ✅ BMI COMO CAMPO SEPARADO (no concatenado con peso)
-- ✅ TODOS LOS CAMPOS SIEMPRE MOSTRADOS en bloques principales
-- ✅ "No proporcionado" para campos faltantes en vez de omitirlos
-- ✅ ENCABEZADO FINAL: branding izq, copyright der
-- ✅ NUMERACIÓN CORRECTA: Al final zona central, orientación normal
-- ✅ ESPACIADO REDUCIDO entre título principal y primer bloque
-- ✅ FORMATO NOMBRE ELEGANTE: Puntos entre palabras
-- ✅ DISEÑO ULTRA-MINIMALISTA Y PROFESIONAL
-- ✅ NOMBRES CAMPOS EN NEGRITA: Exactamente como versión anterior
+✅ MANTENIDO: Generación de Ficha Técnica (PDF y JSON)
 """
 
 import json
@@ -34,8 +15,10 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Tuple, Dict, Any
+from typing import Optional, Tuple, Dict, Any, List
+import traceback
 
+# --- Dependencias Ficha Técnica (ReportLab) ---
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
@@ -47,11 +30,20 @@ from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT, TA_JUSTIFY
 from .models import AthleteProfile, TrainingZones
 from .calculations import calculate_training_zones, calculate_bmi, format_distance_for_display
 from .json_optimizer import optimize_profile_for_ai
+from .cli_helpers import print_success, print_error, print_info, print_warning
 
-# Output configuration
+# --- Configuración Ficha Técnica ---
 DEFAULT_OUTPUTS_DIR = Path("outputs")
 DEFAULT_PDF_FILENAME = "ficha_tecnica_profesional.pdf"
 DEFAULT_JSON_FILENAME = "athlete_profile_ai_optimized.json"
+
+# --- Configuración Plan de Entrenamiento ---
+DEFAULT_PLAN_PDF_FILENAME = "plan_entrenamiento.pdf"
+DEFAULT_PLAN_JSON_FILENAME = "plan_entrenamiento_structured.json"
+DEFAULT_PLAN_MD_FILENAME = "plan_entrenamiento.md"
+
+# Ruta al archivo CSS para el plan PDF
+PLAN_CSS_PATH = Path(__file__).parent / "styles" / "plan_style.css"
 
 # BALANCED MINIMALIST COLOR PALETTE
 BACKGROUND_BLACK = colors.Color(0.04, 0.04, 0.04)  # Deep black #0A0A0A
@@ -283,6 +275,153 @@ def generate_outputs(profile: AthleteProfile,
     except Exception as e:
         print(f"Error generating outputs: {e}")
         return False, "", ""
+
+def generate_plan_outputs(
+    plan_markdown: str,
+    plan_structured: List[Dict[str, Any]],
+    profile_name: str,
+    output_dir: Optional[str] = None
+) -> Tuple[bool, List[str]]:
+    """
+    Orquesta la generación de todos los artefactos del plan de entrenamiento.
+    Genera .json, .md, y .pdf del plan.
+    
+    Args:
+        plan_markdown: String del plan en formato Markdown.
+        plan_structured: Lista de objetos del plan estructurado.
+        profile_name: Nombre del atleta para nombrar archivos.
+        output_dir: Directorio de salida.
+        
+    Returns:
+        Tuple[bool, List[str]]: (Éxito, Lista de rutas de archivos generados)
+    """
+    if not output_dir:
+        output_dir = DEFAULT_OUTPUTS_DIR
+    
+    output_path = Path(output_dir)
+    output_path.mkdir(exist_ok=True)
+    
+    # Limpiar nombre para archivos
+    clean_name = "".join(c for c in profile_name if c.isalnum() or c in (' ', '-', '_')).rstrip()
+    clean_name = clean_name.replace(' ', '_').lower()
+    
+    base_filename = f"plan_{clean_name}"
+    
+    generated_files = []
+    
+    try:
+        # 1. Guardar Plan JSON
+        json_path = save_plan_json(plan_structured, output_path, base_filename)
+        if json_path:
+            generated_files.append(json_path)
+            print_success(f"💾 Plan Estructurado JSON guardado: {json_path}")
+        
+        # 2. Guardar Plan Markdown
+        md_path = save_plan_markdown(plan_markdown, output_path, base_filename)
+        if md_path:
+            generated_files.append(md_path)
+            print_success(f"📝 Plan Markdown guardado: {md_path}")
+            
+        # 3. Generar Plan PDF
+        pdf_path = generar_plan_pdf(plan_markdown, output_path, base_filename)
+        if pdf_path:
+            generated_files.append(pdf_path)
+            print_success(f"📄 Plan Profesional PDF guardado: {pdf_path}")
+            
+        return True, generated_files
+        
+    except Exception as e:
+        print_error(f"Error generando salidas del plan: {e}")
+        import traceback
+        traceback.print_exc()
+        return False, []
+    
+def save_plan_json(plan_structured: List[Dict[str, Any]], output_path: Path, base_filename: str) -> Optional[str]:
+    """Guarda los datos estructurados del plan en un archivo .json."""
+    try:
+        filepath = output_path / f"{base_filename}_structured.json"
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(plan_structured, f, ensure_ascii=False, indent=4)
+        return str(filepath)
+    except Exception as e:
+        print_error(f"Error guardando plan JSON: {e}")
+        return None
+
+def save_plan_markdown(plan_markdown: str, output_path: Path, base_filename: str) -> Optional[str]:
+    """Guarda el string de markdown del plan en un archivo .md."""
+    try:
+        filepath = output_path / f"{base_filename}.md"
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(plan_markdown)
+        return str(filepath)
+    except Exception as e:
+        print_error(f"Error guardando plan Markdown: {e}")
+        return None
+
+def generar_plan_pdf(plan_markdown: str, output_path: Path, base_filename: str) -> Optional[str]:
+    """
+    Convierte el Markdown del plan a HTML (asegurando soporte para tablas)
+    y lo renderiza como un PDF profesional usando WeasyPrint y CSS.
+    Ahora importa las dependencias Just-in-Time.
+    """
+    # --- MOVER IMPORTACIONES AQUÍ DENTRO ---
+    try:
+        from weasyprint import HTML, CSS
+        from markdown_it import MarkdownIt
+        from mdit_py_plugins.front_matter import front_matter_plugin
+        from mdit_py_plugins.footnote import footnote_plugin
+        from mdit_py_plugins.deflist import deflist_plugin
+        # from mdit_py_plugins.table import table_plugin # Descomentar si es necesario
+    except ImportError:
+        print_warning("Generación de Plan PDF omitida (faltan dependencias WeasyPrint/MarkdownIt)")
+        print_info("Instale con: pip install weasyprint markdown-it-py mdit-py-plugins")
+        return None
+    # -----------------------------------------
+
+    try:
+        filepath = output_path / f"{base_filename}.pdf"
+
+        # 1. Convertir Markdown a HTML CON SOPORTE PARA TABLAS
+        md = (
+            MarkdownIt('gfm-like') # Activa tablas y otras extensiones
+            # .enable('table')
+            # .use(table_plugin) # Usar si es necesario
+        )
+        html_content = md.render(plan_markdown)
+
+        # Añadir un wrapper HTML básico
+        html_full = f"""
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="UTF-8"><title>Plan de Entrenamiento</title></head>
+        <body>{html_content}</body>
+        </html>
+        """
+
+        # 2. Cargar hoja de estilos CSS
+        css_to_use = None
+        if PLAN_CSS_PATH.exists():
+            try:
+                css_to_use = CSS(filename=str(PLAN_CSS_PATH))
+                print_info(f"Usando estilos desde: {PLAN_CSS_PATH}")
+            except Exception as css_err:
+                print_error(f"Error cargando CSS desde {PLAN_CSS_PATH}: {css_err}")
+                print_warning("Continuando sin estilos CSS personalizados.")
+        else:
+             print_warning(f"No se encontró CSS en {PLAN_CSS_PATH}. El PDF tendrá estilos por defecto.")
+
+        # 3. Renderizar PDF
+        print_info(f"Renderizando PDF en: {filepath}...")
+        html_doc = HTML(string=html_full)
+        html_doc.write_pdf(filepath, stylesheets=[css_to_use] if css_to_use else None)
+        print_info("PDF renderizado.")
+
+        return str(filepath)
+
+    except Exception as e:
+        print_error(f"Error generando plan PDF con WeasyPrint: {e}")
+        traceback.print_exc() # Imprime el traceback completo
+        return None
 
 def generate_minimalist_final_pdf_output(profile: AthleteProfile, filepath: str) -> bool:
     """Generate final minimalist PDF with elegant name formatting."""

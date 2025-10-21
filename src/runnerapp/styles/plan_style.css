@@ -1,0 +1,112 @@
+/*
+ * Hoja de Estilos para el Plan de Entrenamiento PDF (plan_style.css)
+ *
+ * Este archivo será utilizado por WeasyPrint para dar formato al
+ * PDF generado desde el Markdown del plan de entrenamiento.
+ *
+ * TODO: Implementar estilos profesionales:
+ * - Estilos de tabla (bordes, padding, cabeceras)
+ * - Tipografía (fuentes, tamaños)
+ * - Márgenes y diseño de página
+ * - Estilos para h1, h2, p, ul, li
+ */
+
+/* plan_style.css */
+@page {
+    /* Establecer márgenes directamente para la página */
+    margin: 12mm;
+    /* Opcional: Definir tamaño de página si no es A4 por defecto */
+    /* size: A4; */
+}
+
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.4; /* Ligeramente más compacto */
+    /* El margen ahora se define en @page */
+    /* margin: 20mm; */
+    font-size: 10pt;
+}
+
+h1, h2, h3 {
+    color: #2c3e50; /* Un azul/gris oscuro más profesional */
+    margin-top: 1.2em;
+    margin-bottom: 0.6em;
+    page-break-after: avoid; /* Evitar saltos justo después de títulos */
+    font-weight: 600; /* Ligeramente más bold */
+}
+h1 {
+    font-size: 18pt;
+    margin-bottom: 1em;
+    text-align: center; /* Centrar título principal */
+    border-bottom: 1px solid #bdc3c7; /* Línea sutil debajo */
+    padding-bottom: 0.3em;
+}
+h2 {
+    font-size: 14pt;
+    border-bottom: 1px solid #ecf0f1; /* Línea muy sutil */
+    padding-bottom: 0.2em;
+}
+h3 {
+    font-size: 12pt;
+    /* === Intento de Salto de Página Antes de Cada Semana === */
+    /* 'always' puede ser muy agresivo, 'auto' permite flexibilidad */
+    /* pero 'avoid' en 'tr' es más importante */
+    page-break-before: auto; /* Dejar que 'tr' controle más */
+    break-before: auto;
+    margin-top: 2em; /* Más espacio antes del título de la semana */
+    color: #34495e; /* Otro tono azul/gris */
+}
+
+p {
+    margin-bottom: 0.8em;
+    text-align: justify; /* Justificar texto para apariencia de informe */
+}
+
+/* --- Estilos de Tabla Mejorados --- */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.8em; /* Menos espacio antes */
+    margin-bottom: 1.5em; /* Más espacio después */
+    font-size: 8.5pt; /* Mantener pequeño para detalle */
+    page-break-inside: auto; /* Permitir que la tabla se divida si es necesario */
+}
+
+thead th { /* Estilo específico para cabecera */
+    background-color: #ecf0f1; /* Gris muy claro */
+    color: #34495e;
+    font-weight: bold;
+    border: 1px solid #bdc3c7; /* Borde gris medio */
+    padding: 6px 8px;
+    text-align: left;
+    vertical-align: bottom; /* Alinear texto de cabecera abajo */
+}
+
+tbody tr {
+    /* La regla más importante: evitar romper filas */
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+}
+
+tbody td {
+    border: 1px solid #dde1e3; /* Borde más claro para celdas */
+    padding: 6px 8px;
+    text-align: left;
+    vertical-align: top;
+    page-break-inside: auto; /* Permitir romper DENTRO de una celda si es muy larga */
+    word-wrap: break-word;
+}
+
+/* Opcional: Filas alternas */
+tbody tr:nth-child(even) {
+    background-color: #f8f9f9;
+}
+
+ul {
+    padding-left: 20px;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+li {
+    margin-bottom: 0.3em;
+}

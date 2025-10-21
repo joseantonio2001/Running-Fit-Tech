@@ -4,5 +4,14 @@ prompt-toolkit>=3.0.0
 # Phase 3 dependencies - PDF generation
 reportlab>=4.0.0
 
+# Phase 5 dependencies - AI Connection & Plan PDF Generation
+requests>=2.31.0
+markdown-it-py 
+mdit-py-plugins
+weasyprint
+python-dotenv>=1.0.0
+google-generativeai
+linkify-it-py
+
 # Standard library dependencies (for documentation)
 # json, datetime, pathlib, typing - included in Python standard library
