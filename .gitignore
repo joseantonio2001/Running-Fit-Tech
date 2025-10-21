@@ -161,8 +161,8 @@ cython_debug/
 # Archivos específicos de la aplicación
 athlete_profile.json
 .strava_tokens.json
-*.pdf
-outputs/
+# *.pdf
+outputs/*
 
 # Variables de entorno
 .env.local
